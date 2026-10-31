@@ -79,12 +79,13 @@ jobs:
           cargo build --release -p reverse-proxy --locked
 
       - name: package
+        shell: bash
         run: |
           mkdir -p out
           cp target/release/ddnet-rs out/ 2>/dev/null || true
           cp target/release/reverse-proxy out/ 2>/dev/null || true
           cp -r data out/data 2>/dev/null || true
-          tar -C out -czf "ddnet-rs-debian-bookworm-${GITHUB_SHA::8}.tar.gz" .
+          tar -C out -czf "ddnet-rs-debian-bookworm-${GITHUB_SHA:0:8}.tar.gz" .
 
       - uses: actions/upload-artifact@v4
         with:
