@@ -26,9 +26,9 @@
     --panel-hi: #b6b6bd;
     --ink: #e6e6ea;
     --ink-mid: #c2c2c9;
-    --ink-dim: #96969f;
+    --ink-dim: #a7a7b1;
     --ink-inv: #2a2a2e;
-    --grip: #9b9ba4;
+    --grip: #a5a5af;
     --track: rgba(255, 255, 255, .17);
     --track-hi: rgba(255, 255, 255, .34);
     --hair: rgba(255, 255, 255, .07);
@@ -118,9 +118,14 @@
     padding: 20px 0;
   }
 
+  .rail-items {
+    flex: 1 1 auto;
+    display: flex; flex-direction: column; align-items: center;
+    justify-content: space-evenly;
+    width: 100%;
+  }
   .rail-item {
     width: 34px; height: 34px;
-    margin-bottom: 14px;
     border-radius: 11px;
     display: grid; place-items: center;
     cursor: pointer;
@@ -181,8 +186,10 @@
   }
   .ghost.show { opacity: 1; }
   .ghost.hot {
-    border-color: rgba(255, 255, 255, .45);
-    background: rgba(255, 255, 255, .05);
+    z-index: 998;
+    border-color: rgba(255, 255, 255, .55);
+    background: rgba(255, 255, 255, .04);
+    box-shadow: inset 0 0 0 2px rgba(255, 255, 255, .10);
   }
 
   .panel {
@@ -197,6 +204,7 @@
 
   .panel .clip {
     position: absolute; inset: 0;
+    display: flex; flex-direction: column;
     overflow: hidden;
     background: linear-gradient(180deg, var(--panel-2), var(--panel));
     box-shadow:
@@ -228,6 +236,9 @@
   }
   .panel.main .clip::after { display: none; }
   .panel.hi .clip { background: linear-gradient(180deg, #c0c0c7, var(--panel-hi)); }
+  .panel.hi { --acc: var(--acc-dark, #34343a); --track: rgba(0, 0, 0, .16); --track-hi: rgba(0, 0, 0, .30); }
+  .panel.hi .tg.on i { background: #ecedf1; }
+  .panel.hi .sl .kn { box-shadow: 0 2px 6px rgba(0, 0, 0, .30), inset 0 0 0 1px rgba(255, 255, 255, .10); }
   .panel.hi { color: var(--ink-inv); }
 
   .panel-head {
@@ -235,6 +246,7 @@
     padding: 13px 20px 0;
   }
   .panel-title {
+    min-width: 0;
     font-size: 11px; letter-spacing: .10em; text-transform: uppercase;
     color: var(--ink-mid);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -271,17 +283,24 @@
   }
   .panel.dragging .knob { transform: scale(1.08); }
 
-  .rows { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px 14px; }
+  .rows {
+    display: flex; flex-direction: column; gap: 5px;
+    padding: 8px 16px 16px;
+    flex: 1 1 auto; min-height: 0;
+    overflow-y: auto; scrollbar-width: none;
+  }
+  .rows::-webkit-scrollbar { width: 0; height: 0; }
   .row {
     display: flex; align-items: center; justify-content: space-between;
     gap: 10px;
-    height: 23px;
+    height: 23px; flex: 0 0 23px;
     padding: 0 9px 0 12px;
     border-radius: 13px;
     background: rgba(0, 0, 0, .14);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
   }
   .row-label {
+    flex: 1 1 auto; min-width: 0;
     font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase;
     color: var(--ink-mid);
     white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -292,8 +311,8 @@
   .no-drag { cursor: pointer; }
 
   .resize {
-    position: absolute; right: 6px; bottom: 6px;
-    width: 22px; height: 22px;
+    position: absolute; right: 4px; bottom: 4px;
+    width: 24px; height: 24px;
     display: grid; place-items: center;
     opacity: 0;
     cursor: nwse-resize;
@@ -301,7 +320,8 @@
   }
   .resize::after {
     content: "";
-    width: 9px; height: 9px;
+    width: 7px; height: 7px;
+    margin: 0 0 3px 3px;
     border-right: 2px solid rgba(255, 255, 255, .45);
     border-bottom: 2px solid rgba(255, 255, 255, .45);
     border-bottom-right-radius: 3px;
@@ -329,7 +349,7 @@
   .sl {
     position: relative;
     width: 96px; height: 18px;
-    flex: 0 0 auto;
+    flex: 0 1 96px; min-width: 46px;
   }
   .sl .trk {
     position: absolute; left: 0; right: 0; top: 7px; height: 4px;
@@ -351,6 +371,8 @@
   }
 
   .pill-val {
+    max-width: 56%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
     font-size: 9.5px; letter-spacing: .08em;
     color: var(--ink);
     padding: 3px 9px;
@@ -360,15 +382,21 @@
   }
   .panel.hi .pill-val { background: rgba(0, 0, 0, .14); color: var(--ink-inv); }
 
-  .segbar { display: flex; gap: 6px; padding: 8px; height: 60px; }
+  .segbar { position: absolute; inset: 0; display: flex; gap: 4px; padding: 7px; }
   .seg {
     flex: 1 1 0;
+    min-width: 0;
     border-radius: 22px;
     display: grid; place-items: center;
-    font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase;
+    padding: 0 5px;
+    font-size: 8.5px; letter-spacing: .02em; text-transform: uppercase;
     color: var(--ink-dim);
     background: transparent;
     transition: background .3s, color .3s, transform .4s cubic-bezier(.2, 1.7, .4, 1);
+  }
+  .seg span {
+    max-width: 100%;
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .seg:hover { color: var(--ink-mid); background: rgba(255, 255, 255, .06); }
   .seg.on {
@@ -382,14 +410,18 @@
     display: grid; place-items: center;
   }
   .main-glyph { opacity: .34; transition: transform .6s cubic-bezier(.2, 1.5, .4, 1), opacity .4s; }
-  .main-glyph svg { width: 132px; height: 132px; fill: var(--ink); }
+  .main-glyph svg { width: var(--glyph, 132px); height: var(--glyph, 132px); fill: var(--ink); }
   .panel.main:hover .main-glyph { transform: scale(1.04); opacity: .42; }
 
   .main-title {
     position: absolute; left: 34px; top: 30px;
+    max-width: calc(100% - 230px);
+  }
+  .main-title .t, .main-title .s {
+    overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
   .main-title .t {
-    font-size: 17px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+    font-size: var(--title, 17px); letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
   }
   .main-title .s {
     margin-top: 6px;
@@ -397,6 +429,8 @@
   }
   .main-chip {
     position: absolute; right: 30px; top: 30px;
+    max-width: 42%;
+    overflow: hidden; white-space: nowrap;
     display: flex; align-items: center; gap: 7px;
     padding: 7px 13px;
     border-radius: 15px;
@@ -428,6 +462,7 @@
   }
   .search-field input {
     width: 100%;
+    user-select: text; -webkit-user-select: text;
     background: none; border: 0; outline: none;
     font-family: inherit;
     font-size: 10px; letter-spacing: .07em;
@@ -437,7 +472,7 @@
   .search-field input::placeholder { color: var(--ink-dim); }
 
   .presets-body { position: absolute; inset: 0; }
-  .sheets { position: absolute; left: 22px; right: 22px; bottom: 20px; height: 92px; }
+  .sheets { position: absolute; left: 24px; right: 34px; bottom: 20px; height: 92px; }
   .sheet {
     position: absolute; left: 0; right: 0; bottom: 0;
     height: 76px;
@@ -452,9 +487,10 @@
     color: var(--ink);
     transition: transform .5s cubic-bezier(.2, 1.6, .4, 1), filter .3s;
   }
+  .sheet { transform-origin: 50% 100%; }
   .sheet:nth-child(1) { transform: translate(0, 0) rotate(0deg); }
-  .sheet:nth-child(2) { transform: translate(0, -14px) rotate(3deg) scale(.965); filter: brightness(.94); }
-  .sheet:nth-child(3) { transform: translate(0, -27px) rotate(6deg) scale(.93); filter: brightness(.88); }
+  .sheet:nth-child(2) { transform: translate(0, -15px) rotate(2.6deg) scale(.955); filter: brightness(.95); }
+  .sheet:nth-child(3) { transform: translate(0, -29px) rotate(5.2deg) scale(.91); filter: brightness(.90); }
   .sheet:hover { transform: translate(0, -6px) rotate(-1deg) scale(1.01); filter: brightness(1.06); z-index: 3; }
 
   .preset-dot {
@@ -480,7 +516,7 @@
     backdrop-filter: blur(6px);
   }
   .hud label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
-  .hud input[type=range] { width: 78px; }
+  .hud input[type=range] { width: 78px; accent-color: #cfcfd6; }
   .hud button {
     font: inherit; color: #c9c9d2;
     background: rgba(255, 255, 255, .07);
@@ -524,13 +560,13 @@
 const DESIGN_W = 1120, DESIGN_H = 720;
 
 const SLOTS = {
-  main:    { x: 108, y: 30,  w: 676, h: 540, r: 46 },
+  main:    { x: 108, y: 30,  w: 676, h: 412, r: 46 },
   bar:     { x: 808, y: 30,  w: 284, h: 60,  r: 30 },
   card1:   { x: 808, y: 106, w: 284, h: 108, r: 26 },
   card2:   { x: 808, y: 228, w: 284, h: 108, r: 26 },
   card3:   { x: 808, y: 350, w: 284, h: 118, r: 30 },
-  rows:    { x: 430, y: 470, w: 330, h: 190, r: 34 },
-  search:  { x: 108, y: 600, w: 300, h: 78,  r: 39 },
+  rows:    { x: 454, y: 450, w: 330, h: 210, r: 34 },
+  search:  { x: 108, y: 570, w: 300, h: 78,  r: 39 },
   presets: { x: 808, y: 490, w: 284, h: 170, r: 34 },
 };
 
@@ -597,8 +633,10 @@ function rowNode(row) {
     const fil = sl.querySelector(".fil");
     const kn = sl.querySelector(".kn");
     const set = (v) => {
-      fil.style.width = (v * 100) + "%";
-      kn.style.left = (v * 100) + "%";
+      const k = Math.max(0, Math.min(1, v));
+      const pos = "calc(7px + (100% - 14px) * " + k + ")";
+      fil.style.width = pos;
+      kn.style.left = pos;
     };
     set(row.v);
     let active = false;
@@ -644,7 +682,7 @@ function buildPanel(data) {
   if (data.kind === "segbar") {
     const bar = el("div", "segbar");
     data.segs.forEach((s, i) => {
-      const seg = el("div", "seg no-drag" + (i === data.active ? " on" : ""), s);
+      const seg = el("div", "seg no-drag" + (i === data.active ? " on" : ""), "<span>" + s + "</span>");
       seg.dataset.idx = i;
       bar.append(seg);
     });
@@ -663,6 +701,7 @@ function buildPanel(data) {
     const add = el("div", "search-add no-drag", '<svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/></svg>');
     const field = el("div", "search-field");
     const input = el("input");
+    input.className = "no-drag";
     input.placeholder = "Поиск модулей...";
     input.id = "search-input";
     field.append(input);
@@ -779,10 +818,11 @@ let stageScale = 1;
 let stageRect = stage.getBoundingClientRect();
 
 function fitStage() {
-  const pad = 96;
+  const pad = 84;
+  const padBottom = 52;
   const k = Math.min(
     (window.innerWidth - pad) / DESIGN_W,
-    (window.innerHeight - pad) / DESIGN_H
+    (window.innerHeight - pad - padBottom) / DESIGN_H
   );
   stageScale = Math.max(.35, Math.min(1.6, k));
   stage.style.transform = "scale(" + stageScale + ")";
@@ -849,6 +889,10 @@ function onDown(e, p, node) {
   p.k = 620; p.c = 52;
   p.grabX = pt.x - p.x;
   p.grabY = pt.y - p.y;
+  node.style.transformOrigin = p.grabX.toFixed(1) + "px " + p.grabY.toFixed(1) + "px";
+  p.fromSlot = p.slot;
+  p.slot = null;
+  refreshGhosts();
   p.tx = p.x;
   p.ty = p.y;
   drag = { p: p, node: node, id: e.pointerId, startX: pt.x, startY: pt.y };
@@ -867,10 +911,17 @@ function onMove(e) {
   const vx = pt.x - drag.startX, vy = pt.y - drag.startY;
   p.vrot = Math.max(-0.035, Math.min(0.035, vx * 0.00035));
   drag.startX = pt.x; drag.startY = pt.y;
-  highlightSlot(findSlotAt(pt.x, pt.y));
+  highlightSlot(findSlotAt(pt.x, pt.y, p));
 }
 
-function findSlotAt(x, y) {
+function sizeFits(p, s) {
+  const a = p.w * p.h, b = s.w * s.h;
+  const area = Math.max(a / b, b / a);
+  const ar = Math.max((p.w / p.h) / (s.w / s.h), (s.w / s.h) / (p.w / p.h));
+  return area <= 1.9 && ar <= 1.45;
+}
+
+function findSlotAt(x, y, panel) {
   let best = null, bestD = Infinity;
   Object.keys(SLOTS).forEach((key) => {
     const s = SLOTS[key];
@@ -880,6 +931,7 @@ function findSlotAt(x, y) {
     const d = Math.hypot(x - cx, y - cy);
     if (d < bestD) { bestD = d; best = key; }
   });
+  if (best && panel && !sizeFits(panel, SLOTS[best])) return null;
   return best;
 }
 
@@ -903,23 +955,19 @@ function onUp() {
   window.removeEventListener("pointerup", onUp);
   window.removeEventListener("pointercancel", onUp);
 
-  const target = findSlotAt(p.x + p.w / 2, p.y + p.h / 2) || findSlotAt(p.tx + p.w / 2, p.ty + p.h / 2);
+  const target = findSlotAt(p.x + p.w / 2, p.y + p.h / 2, p) || findSlotAt(p.tx + p.w / 2, p.ty + p.h / 2, p);
   if (target) {
     const occ = occupantOf(target);
+    const home = p.fromSlot;
     if (occ && occ !== p) {
-      const oldSlot = p.slot;
-      occ.slot = oldSlot;
-      const os = SLOTS[oldSlot];
-      occ.w = os.w; occ.h = os.h; occ.r = os.r;
-      occ.tx = os.x; occ.ty = os.y;
-      applySize(occ);
-      occ.vx += 40; occ.vy -= 30;
+      if (home && home !== target) {
+        setSlot(occ, home);
+        occ.vx += 40; occ.vy -= 30;
+      } else {
+        eject(occ);
+      }
     }
-    const s = SLOTS[target];
-    p.slot = target;
-    p.w = s.w; p.h = s.h; p.r = s.r;
-    p.tx = s.x; p.ty = s.y;
-    applySize(p);
+    setSlot(p, target);
   } else {
     p.slot = null;
     p.tx = Math.max(20, Math.min(DESIGN_W - p.w - 20, p.tx));
@@ -933,46 +981,69 @@ function onUp() {
   refreshGhosts();
 }
 
-function dockTo(p, slotKey) {
-  const occ = occupantOf(slotKey);
-  if (occ && occ !== p) {
-    if (p.slot) {
-      const os = SLOTS[p.slot];
-      occ.slot = p.slot;
-      occ.w = os.w; occ.h = os.h; occ.r = os.r;
-      occ.tx = os.x; occ.ty = os.y;
-      applySize(occ);
-      occ.vx += 40; occ.vy -= 30;
-    }
-  }
+function eject(occ) {
+  occ.slot = null;
+  occ.tx = Math.max(20, Math.min(DESIGN_W - occ.w - 20, occ.tx + 46));
+  occ.ty = Math.max(20, Math.min(DESIGN_H - occ.h - 20, occ.ty + 56));
+  occ.vx += 80; occ.vy -= 60;
+  occ.z = ++zTop;
+  panelEls.get(occ.id).style.zIndex = String(occ.z);
+}
+
+function setSlot(p, slotKey) {
   const s = SLOTS[slotKey];
   p.slot = slotKey;
   p.w = s.w; p.h = s.h; p.r = s.r;
   p.tx = s.x; p.ty = s.y;
   p.k = 190; p.c = 16.5;
-  p.vx += 30; p.vy -= 20;
   applySize(p);
+}
+
+function dockTo(p, slotKey) {
+  const occ = occupantOf(slotKey);
+  const home = p.slot;
+  if (occ && occ !== p) {
+    if (home && home !== slotKey) {
+      setSlot(occ, home);
+      occ.vx += 40; occ.vy -= 30;
+    } else {
+      eject(occ);
+    }
+  }
+  setSlot(p, slotKey);
+  p.vx += 30; p.vy -= 20;
   refreshGhosts();
+  updateFade(p);
 }
 
 function sendHome(p) {
   const def = PANEL_DATA.find((d) => d.id === p.id);
   if (!def) return;
   dockTo(p, def.slot);
-  pulse(panelEls.get(p.id));
+  p.vsc = 0.05;
 }
 
 function updateFade(p) {
   const node = panelEls.get(p.id);
   const clip = node.querySelector(".clip");
-  node.classList.toggle("fade", clip.scrollHeight > clip.clientHeight + 2);
+  const sc = clip.querySelector(".rows");
+  const over = sc
+    ? sc.scrollHeight > sc.clientHeight + 2
+    : clip.scrollHeight > clip.clientHeight + 2;
+  node.classList.toggle("fade", over);
 }
 
 function applySize(p) {
   const node = panelEls.get(p.id);
   node.style.width = p.w + "px";
   node.style.height = p.h + "px";
-  node.querySelector(".clip").style.borderRadius = p.r + "px";
+  const clip = node.querySelector(".clip");
+  clip.style.borderRadius = p.r + "px";
+  if (p.id === "main") {
+    const g = Math.round(Math.max(54, Math.min(132, Math.min(p.h * 0.28, p.w * 0.24))));
+    clip.style.setProperty("--glyph", g + "px");
+    clip.style.setProperty("--title", Math.round(Math.max(12, Math.min(17, p.w * 0.026))) + "px");
+  }
   updateFade(p);
 }
 
@@ -981,6 +1052,7 @@ function bindAll() {
     const p = panelById.get(d.id);
     const s = SLOTS[d.slot];
     p.slot = d.slot;
+    p.fromSlot = d.slot;
     p.w = s.w; p.h = s.h; p.r = s.r;
     p.tx = s.x; p.ty = s.y;
     p.k = 190; p.c = 16.5;
@@ -996,17 +1068,19 @@ document.querySelector(".brand").addEventListener("click", bindAll);
 function buildRail() {
   const rail = document.getElementById("rail");
   rail.innerHTML = "";
+  const list = el("div", "rail-items");
   RAIL_ITEMS.forEach((item, i) => {
     const it = el("div", "rail-item no-drag" + (i === 0 ? " on" : ""), "<span></span>");
     it.title = item.title;
     it.addEventListener("click", () => {
-      rail.querySelectorAll(".rail-item").forEach((x) => x.classList.remove("on"));
+      list.querySelectorAll(".rail-item").forEach((x) => x.classList.remove("on"));
       it.classList.add("on");
       setMain(item);
       pulse(it);
     });
-    rail.append(it);
+    list.append(it);
   });
+  rail.append(list);
   const bottom = el("div", "rail-bottom no-drag", '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.2 12c0-.4 0-.8-.1-1.2l2-1.5-2-3.4-2.3.9c-.6-.5-1.3-1-2-1.3L14.4 3H9.6l-.4 2.5c-.7.3-1.4.8-2 1.3l-2.3-.9-2 3.4 2 1.5c-.1.4-.1.8-.1 1.2s0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9c.6.5 1.3 1 2 1.3l.4 2.5h4.8l.4-2.5c.7-.3 1.4-.8 2-1.3l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>');
   bottom.title = "настройки";
   rail.append(bottom);
@@ -1066,7 +1140,6 @@ function tick(ts) {
     p.vsc += as * dt;
     p.sc += p.vsc * dt;
 
-    p.vrot += ((p.dragging ? p.vrot : 0) - p.rot) * 0;
     const targetRot = p.dragging ? p.vrot * 0.6 : 0;
     p.rot += (targetRot - p.rot) * Math.min(1, dt * 12);
 
@@ -1093,21 +1166,25 @@ window.addEventListener("pointermove", (e) => {
 });
 const hAccent = document.getElementById("h-accent");
 const hAccentV = document.getElementById("h-accent-v");
-hAccent.addEventListener("input", () => {
-  const v = +hAccent.value;
+function applyAccent(v) {
   const root = document.documentElement;
+  hAccent.value = String(v);
   if (v === 0) {
     root.style.setProperty("--acc", "#d7d7dd");
+    root.style.setProperty("--acc-dark", "#34343a");
     hAccentV.textContent = "серый";
   } else {
-    const sat = 42, light = 74;
-    root.style.setProperty("--acc", "hsl(" + v + " " + sat + "% " + light + "%)");
+    root.style.setProperty("--acc", "hsl(" + v + " 42% 74%)");
+    root.style.setProperty("--acc-dark", "hsl(" + v + " 40% 30%)");
     hAccentV.textContent = v + "°";
   }
-});
+}
+hAccent.addEventListener("input", () => applyAccent(+hAccent.value));
+applyAccent(0);
 document.getElementById("h-bind").addEventListener("click", bindAll);
 document.getElementById("h-reset").addEventListener("click", bindAll);
 window.addEventListener("keydown", (e) => {
+  if (e.target && e.target.tagName === "INPUT") return;
   if (e.key === "h" || e.key === "H") hud.classList.toggle("hidden");
 });
 </script>
