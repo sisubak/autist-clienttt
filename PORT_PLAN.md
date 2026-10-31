@@ -1,5 +1,11 @@
 # Порт so.loud → ddnet-rs (BestClient на Rust)
 
+> **Область работ сужена:** нужен только импорт меню `peekgg` под переделку вида.
+> Остальной функционал клиента (батчи 2–8 ниже) не переносится — раздел оставлен
+> как инвентарь исходника и карта, куда смотреть, если планы поменяются.
+> Меню: `peekgg/`, гайд по переделке — `MENU_REWORK.md`, превью —
+> `game/client-bestclient/preview/menu.html`.
+
 Источник: `so.loud` (C++ форк DDNet, 3082 файла, ~66k строк в `src/game/client/components/bestclient` + ~10k в `tclient` + ~3k в `peekgg`).
 Цель: `ddnet-rs` (форк `sisubak/autist-clienttt`, egui-based UI, 225k строк Rust workspace).
 
