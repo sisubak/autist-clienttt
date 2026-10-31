@@ -185,6 +185,7 @@
     z-index: 3;
   }
   .ghost.show { opacity: 1; }
+  #ghosts.off .ghost { opacity: 0 !important; }
   .ghost.hot {
     z-index: 998;
     border-color: rgba(255, 255, 255, .55);
@@ -206,14 +207,18 @@
     position: absolute; inset: 0;
     display: flex; flex-direction: column;
     overflow: hidden;
-    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    background: linear-gradient(180deg, var(--panel-2-a, var(--panel-2)), var(--panel-a, var(--panel)));
+    backdrop-filter: blur(var(--blur, 0px)) saturate(var(--sat, 1.06));
+    -webkit-backdrop-filter: blur(var(--blur, 0px)) saturate(var(--sat, 1.06));
     box-shadow:
       0 18px 34px rgba(0, 0, 0, .30),
       0 4px 10px rgba(0, 0, 0, .22),
       inset 0 1px 0 rgba(255, 255, 255, .10),
       inset 0 0 0 1px rgba(0, 0, 0, .12);
-    transition: box-shadow .35s;
+    transition: box-shadow .35s, transform .4s cubic-bezier(.2, 1.6, .4, 1), background .3s;
   }
+  .panel:hover .clip { transform: translateY(-1.5px); }
+  .panel.dragging:hover .clip { transform: none; }
   .panel.dragging .clip,
   .panel.lifted .clip {
     box-shadow:
@@ -235,7 +240,9 @@
     background: linear-gradient(to top, rgba(182, 182, 189, .95), rgba(182, 182, 189, 0));
   }
   .panel.main .clip::after { display: none; }
-  .panel.hi .clip { background: linear-gradient(180deg, #c0c0c7, var(--panel-hi)); }
+  .panel.hi .clip {
+    background: linear-gradient(180deg, var(--hi-2-a, #c0c0c7), var(--hi-a, var(--panel-hi)));
+  }
   .panel.hi { --acc: var(--acc-dark, #34343a); --track: rgba(0, 0, 0, .16); --track-hi: rgba(0, 0, 0, .30); }
   .panel.hi .tg.on i { background: #ecedf1; }
   .panel.hi .sl .kn { box-shadow: 0 2px 6px rgba(0, 0, 0, .30), inset 0 0 0 1px rgba(255, 255, 255, .10); }
@@ -271,17 +278,6 @@
   }
   .panel.hi .grip i { background: rgba(40, 40, 46, .55); }
 
-  .knob {
-    position: absolute; left: -22px; top: 50%;
-    width: 44px; height: 44px; margin-top: -22px;
-    border-radius: 50%;
-    background: linear-gradient(180deg, #6e6e77, #57575e);
-    box-shadow:
-      0 8px 20px rgba(0, 0, 0, .40),
-      inset 0 1px 0 rgba(255, 255, 255, .22);
-    transition: transform .4s cubic-bezier(.2, 1.7, .4, 1);
-  }
-  .panel.dragging .knob { transform: scale(1.08); }
 
   .rows {
     display: flex; flex-direction: column; gap: 5px;
@@ -298,7 +294,10 @@
     border-radius: 13px;
     background: rgba(0, 0, 0, .14);
     box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+    transition: background .28s, transform .34s cubic-bezier(.2, 1.6, .4, 1), opacity .28s;
   }
+  .row:hover { background: rgba(255, 255, 255, .06); transform: translateX(3px); }
+  .panel.hi .row:hover { background: rgba(0, 0, 0, .16); }
   .row-label {
     flex: 1 1 auto; min-width: 0;
     font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase;
@@ -383,7 +382,20 @@
   .panel.hi .pill-val { background: rgba(0, 0, 0, .14); color: var(--ink-inv); }
 
   .segbar { position: absolute; inset: 0; display: flex; gap: 4px; padding: 7px; }
+  .seg-pill {
+    position: absolute; top: 7px; bottom: 7px; left: 0;
+    width: 0;
+    border-radius: 22px;
+    background: var(--acc);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, .25);
+    pointer-events: none;
+    transition:
+      transform .58s cubic-bezier(.2, 1.6, .35, 1),
+      width .58s cubic-bezier(.2, 1.6, .35, 1),
+      background .3s;
+  }
   .seg {
+    position: relative; z-index: 1;
     flex: 1 1 0;
     min-width: 0;
     border-radius: 22px;
@@ -392,18 +404,15 @@
     font-size: 8.5px; letter-spacing: .02em; text-transform: uppercase;
     color: var(--ink-dim);
     background: transparent;
-    transition: background .3s, color .3s, transform .4s cubic-bezier(.2, 1.7, .4, 1);
+    transition: color .3s, transform .4s cubic-bezier(.2, 1.7, .4, 1);
   }
   .seg span {
     max-width: 100%;
     overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
   }
-  .seg:hover { color: var(--ink-mid); background: rgba(255, 255, 255, .06); }
-  .seg.on {
-    background: var(--acc);
-    color: var(--ink-inv);
-    box-shadow: 0 6px 14px rgba(0, 0, 0, .25);
-  }
+  .seg:hover { color: var(--ink-mid); }
+  .seg.on { color: var(--ink-inv); }
+  .seg.on:hover { color: var(--ink-inv); }
 
   .main-body {
     position: absolute; inset: 0;
@@ -451,6 +460,9 @@
   .search-add:hover { transform: rotate(90deg) scale(1.06); }
   .search-add:active { transform: rotate(90deg) scale(.92); }
   .search-add svg { width: 18px; height: 18px; fill: currentColor; }
+  .search-field:focus-within {
+    box-shadow: 0 0 0 1px rgba(255, 255, 255, .20), 0 10px 22px rgba(0, 0, 0, .28);
+  }
   .search-field {
     flex: 1 1 auto; min-width: 0;
     height: 38px;
@@ -501,6 +513,83 @@
     transition: background .3s, transform .4s cubic-bezier(.2, 1.8, .4, 1);
   }
   .preset-dot:hover { background: rgba(255, 255, 255, .6); transform: scale(1.2); }
+
+  .set-body {
+    position: absolute; inset: 0;
+    display: flex; flex-direction: column;
+    gap: 14px;
+    padding: 28px 26px 22px;
+  }
+  .set-head { display: flex; align-items: baseline; gap: 10px; }
+  .set-title { font-size: 15px; letter-spacing: .16em; color: var(--ink); }
+  .set-sub { font-size: 8.5px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); }
+  .set-cols { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; flex: 1 1 auto; min-height: 0; }
+  .set-card {
+    background: rgba(0, 0, 0, .16);
+    border-radius: 20px;
+    padding: 14px 16px 16px;
+    display: flex; flex-direction: column; gap: 16px;
+    min-height: 0; overflow-y: auto; scrollbar-width: none;
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  }
+  .set-card::-webkit-scrollbar { width: 0; }
+  .set-card h4 {
+    margin: 0 0 4px; font-size: 9px; font-weight: 400;
+    letter-spacing: .18em; text-transform: uppercase; color: var(--ink-dim);
+  }
+  .ctl { display: flex; align-items: center; gap: 10px; height: 40px; flex: 0 0 40px; }
+  .ctl-label {
+    flex: 1 1 auto; min-width: 0;
+    font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase; color: var(--ink-mid);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .ctl-val { flex: 0 0 46px; text-align: right; font-size: 8.5px; letter-spacing: .04em; color: var(--ink-dim); }
+  .ctl .sl { flex: 0 1 150px; min-width: 60px; }
+  .swatches { display: flex; gap: 6px; flex: 0 0 auto; margin-left: auto; margin-right: 56px; }
+  .swatch {
+    width: 17px; height: 17px; border-radius: 50%; cursor: pointer;
+    box-shadow: inset 0 0 0 1px rgba(0, 0, 0, .22), 0 2px 5px rgba(0, 0, 0, .28);
+    transition: transform .34s cubic-bezier(.2, 1.7, .4, 1), box-shadow .25s;
+  }
+  .swatch:hover { transform: scale(1.16); }
+  .swatch.on { box-shadow: 0 0 0 2px rgba(255, 255, 255, .55), 0 3px 8px rgba(0, 0, 0, .32); }
+  .set-foot {
+    display: flex; align-items: center; gap: 18px; flex-wrap: wrap;
+    background: rgba(0, 0, 0, .12); border-radius: 18px; padding: 9px 12px;
+    flex: 0 0 auto;
+  }
+  .set-foot .ctl { flex: 0 0 auto; gap: 9px; height: 24px; }
+  .set-foot .ctl-label { flex: 0 0 auto; }
+  .set-btn {
+    font: inherit; font-size: 8.5px; letter-spacing: .1em; text-transform: uppercase;
+    color: var(--ink); background: rgba(255, 255, 255, .09);
+    border: 0; border-radius: 11px; padding: 8px 11px; cursor: pointer;
+    transition: background .25s, transform .32s cubic-bezier(.2, 1.7, .4, 1);
+  }
+  .set-btn:hover { background: rgba(255, 255, 255, .17); transform: translateY(-1px); }
+  .set-btn:active { transform: scale(.96); }
+  .set-btn.accent { background: var(--acc); color: var(--ink-inv); }
+  .set-btn.danger { color: #f0cfcf; background: rgba(206, 96, 96, .22); }
+  .set-btn.spacer { margin-left: auto; }
+  .set-foot .set-btn { padding: 9px 13px; }
+
+  .main-glyph.swap { animation: glyphSwap .62s cubic-bezier(.2, 1.5, .4, 1); }
+  .main-title .t.swap, .main-title .s.swap { animation: textSwap .55s cubic-bezier(.2, 1.5, .4, 1); }
+  @keyframes glyphSwap {
+    0% { opacity: 0; transform: scale(.84) translateY(10px); }
+    60% { opacity: 1; }
+    100% { opacity: 1; transform: none; }
+  }
+  @keyframes textSwap {
+    0% { opacity: 0; transform: translateY(6px); letter-spacing: .28em; }
+    100% { opacity: 1; transform: none; letter-spacing: normal; }
+  }
+  .panel.leaving { animation: panelLeave .2s cubic-bezier(.4, 0, .7, .2) forwards; pointer-events: none; }
+  @keyframes panelLeave {
+    0% { opacity: 1; }
+    100% { opacity: 0; }
+  }
+  .panel.gone { display: none; }
 
   .hud {
     position: fixed; right: 14px; bottom: 14px; z-index: 100;
@@ -568,7 +657,47 @@ const SLOTS = {
   rows:    { x: 454, y: 450, w: 330, h: 210, r: 34 },
   search:  { x: 108, y: 570, w: 300, h: 78,  r: 39 },
   presets: { x: 808, y: 490, w: 284, h: 170, r: 34 },
+  wide:    { x: 108, y: 106, w: 984, h: 554, r: 46 },
 };
+
+const VIEWS = {
+  visual: ["main", "bar", "card1", "card2", "card3", "rows", "presets", "search"],
+  accessories: ["main", "bar", "card1", "card2", "card3", "presets", "search"],
+  settings: ["settings", "bar"],
+};
+
+const CFG = {
+  accent: 0,
+  opacity: 0.88,
+  blur: 16,
+  scale: 1,
+  tempo: 1,
+  tilt: 0.00035,
+  grab: 1.035,
+  snap: true,
+  keepIn: false,
+  radius: 1,
+  bounce: 0.06,
+  showSlots: true,
+  remember: true,
+};
+
+const CARD_SETS = {
+  visual: {
+    card1: { title: "СВЕЧЕНИЕ ЛАЗЕРА", rows: [{ l: "Включить", t: "tg", on: false }, { l: "Сила", t: "sl", v: .5 }] },
+    card2: { title: "JELLY TEE", rows: [{ l: "Включить", t: "tg", on: true }, { l: "Сила", t: "sl", v: .82 }] },
+    card3: { title: "ПОГОДА", rows: [{ l: "Включить", t: "tg", on: true }, { l: "Тип", t: "val", v: "СНЕГ" }] },
+  },
+  accessories: {
+    card1: { title: "ШАПКА", rows: [{ l: "Включить", t: "tg", on: true }, { l: "Модель", t: "val", v: "КОРОНА" }] },
+    card2: { title: "ПЛАЩ", rows: [{ l: "Включить", t: "tg", on: false }, { l: "Цвет", t: "val", v: "АЛЫЙ" }] },
+    card3: { title: "СКИН", rows: [{ l: "Трейл", t: "tg", on: true }, { l: "Сила", t: "sl", v: .35 }] },
+  },
+};
+
+const STORE_KEY = "peekgg.menu.proto.v1";
+const CFG_DEFAULT = Object.assign({}, CFG);
+const ctlSync = new Map();
 
 const RAIL_ITEMS = [
   { key: "aura", title: "АУРА ЦЕЛИ", sub: "визуал · эффект" },
@@ -601,6 +730,7 @@ const PANEL_DATA = [
       { l: "Подтверждение", t: "tg", on: false },
     ]
   },
+  { id: "settings", slot: "wide", kind: "settings", title: "НАСТРОЙКИ МЕНЮ", sub: "интерфейс · анимации · раскладка" },
   { id: "search", slot: "search", kind: "search" },
   { id: "presets", slot: "presets", kind: "presets", title: "ПРЕСЕТЫ", sheets: ["DEFAULT", "AIM", "VISUAL"] },
 ];
@@ -669,6 +799,8 @@ function buildPanel(data) {
     rot: 0, vrot: 0,
     k: 190, c: 16.5,
     dragging: false,
+    visible: true,
+    homeSlot: data.slot,
   };
 
   const node = el("div", "panel" + (data.kind === "main" ? " main" : "") + (data.hi ? " hi" : ""));
@@ -681,6 +813,7 @@ function buildPanel(data) {
 
   if (data.kind === "segbar") {
     const bar = el("div", "segbar");
+    bar.append(el("div", "seg-pill"));
     data.segs.forEach((s, i) => {
       const seg = el("div", "seg no-drag" + (i === data.active ? " on" : ""), "<span>" + s + "</span>");
       seg.dataset.idx = i;
@@ -727,6 +860,8 @@ function buildPanel(data) {
     });
     body.append(sheets);
     clip.append(body);
+  } else if (data.kind === "settings") {
+    by_utf8xbot_3391(clip, data);
   } else {
     const head = el("div", "panel-head");
     head.append(el("div", "panel-title", data.title));
@@ -736,7 +871,7 @@ function buildPanel(data) {
     clip.append(rows);
   }
 
-  if (data.kind === "module" || data.kind === "list" || data.kind === "presets") {
+  if (data.kind === "module" || data.kind === "list" || data.kind === "presets" || data.kind === "settings") {
     const grip = el("div", "grip", "<i></i><i></i><i></i>");
     clip.append(grip);
   }
@@ -745,9 +880,6 @@ function buildPanel(data) {
   rz.addEventListener("pointerdown", (e) => onResizeDown(e, p, node));
   node.append(clip, rz);
 
-  if (data.kind === "main") {
-    node.append(el("div", "knob no-drag"));
-  }
 
   node.addEventListener("pointerdown", (e) => onDown(e, p, node));
   node.addEventListener("dblclick", (e) => {
@@ -804,9 +936,11 @@ function occupantOf(slotKey) {
 }
 
 function refreshGhosts() {
+  const active = new Set();
+  panelById.forEach((p) => { if (p.visible) active.add(p.homeSlot); });
   ghostBySlot.forEach((g, key) => {
     const occ = occupantOf(key);
-    g.classList.toggle("show", !occ);
+    g.classList.toggle("show", active.has(key) && !occ);
   });
 }
 
@@ -824,7 +958,7 @@ function fitStage() {
     (window.innerWidth - pad) / DESIGN_W,
     (window.innerHeight - pad - padBottom) / DESIGN_H
   );
-  stageScale = Math.max(.35, Math.min(1.6, k));
+  stageScale = Math.max(.3, Math.min(1.8, k * CFG.scale));
   stage.style.transform = "scale(" + stageScale + ")";
   stageRect = stage.getBoundingClientRect();
 }
@@ -885,7 +1019,7 @@ function onDown(e, p, node) {
   p.z = ++zTop;
   node.style.zIndex = String(p.z);
   node.classList.add("dragging");
-  p.tsc = 1.035;
+  p.tsc = CFG.grab;
   p.k = 620; p.c = 52;
   p.grabX = pt.x - p.x;
   p.grabY = pt.y - p.y;
@@ -909,9 +1043,10 @@ function onMove(e) {
   p.tx = pt.x - p.grabX;
   p.ty = pt.y - p.grabY;
   const vx = pt.x - drag.startX, vy = pt.y - drag.startY;
-  p.vrot = Math.max(-0.035, Math.min(0.035, vx * 0.00035));
+  const lim = Math.max(0.004, CFG.tilt * 110);
+  p.vrot = Math.max(-lim, Math.min(lim, vx * CFG.tilt));
   drag.startX = pt.x; drag.startY = pt.y;
-  highlightSlot(findSlotAt(pt.x, pt.y, p));
+  highlightSlot(CFG.snap ? by_utf8xbot_2211({ x: p.tx, y: p.ty, w: p.w, h: p.h }) : null);
 }
 
 function sizeFits(p, s) {
@@ -921,18 +1056,29 @@ function sizeFits(p, s) {
   return area <= 1.9 && ar <= 1.45;
 }
 
-function findSlotAt(x, y, panel) {
-  let best = null, bestD = Infinity;
+function by_utf8xbot_2211(rect) {
+  let best = null, bestA = 0;
+  const active = new Set();
+  panelById.forEach((p) => { if (p.visible) active.add(p.homeSlot); });
   Object.keys(SLOTS).forEach((key) => {
+    if (!active.has(key)) return;
     const s = SLOTS[key];
-    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
-    const inside = x > s.x - 30 && x < s.x + s.w + 30 && y > s.y - 30 && y < s.y + s.h + 30;
-    if (!inside) return;
-    const d = Math.hypot(x - cx, y - cy);
-    if (d < bestD) { bestD = d; best = key; }
+    const ox = Math.min(rect.x + rect.w, s.x + s.w) - Math.max(rect.x, s.x);
+    const oy = Math.min(rect.y + rect.h, s.y + s.h) - Math.max(rect.y, s.y);
+    if (ox <= 0 || oy <= 0) return;
+    const a = ox * oy;
+    if (a > bestA) { bestA = a; best = key; }
   });
-  if (best && panel && !sizeFits(panel, SLOTS[best])) return null;
+  if (!best) return null;
+  const s = SLOTS[best];
+  if (!sizeFits(rect, s)) return null;
+  if (bestA < Math.min(rect.w * rect.h, s.w * s.h) * 0.3) return null;
   return best;
+}
+
+function findSlotAt(x, y, panel) {
+  if (!panel) return null;
+  return by_utf8xbot_2211({ x: x - panel.w / 2, y: y - panel.h / 2, w: panel.w, h: panel.h });
 }
 
 function highlightSlot(key) {
@@ -955,7 +1101,7 @@ function onUp() {
   window.removeEventListener("pointerup", onUp);
   window.removeEventListener("pointercancel", onUp);
 
-  const target = findSlotAt(p.x + p.w / 2, p.y + p.h / 2, p) || findSlotAt(p.tx + p.w / 2, p.ty + p.h / 2, p);
+  const target = CFG.snap ? by_utf8xbot_2211({ x: p.tx, y: p.ty, w: p.w, h: p.h }) : null;
   if (target) {
     const occ = occupantOf(target);
     const home = p.fromSlot;
@@ -975,7 +1121,7 @@ function onUp() {
     p.vx += (p.x - p.tx) * 2.5;
     p.vy += (p.y - p.ty) * 2.5;
   }
-  p.vsc = -0.06;
+  p.vsc = -CFG.bounce;
   drag = null;
   ghostBySlot.forEach((g) => g.classList.remove("hot"));
   refreshGhosts();
@@ -1038,7 +1184,7 @@ function applySize(p) {
   node.style.width = p.w + "px";
   node.style.height = p.h + "px";
   const clip = node.querySelector(".clip");
-  clip.style.borderRadius = p.r + "px";
+  clip.style.borderRadius = Math.round(p.r * CFG.radius) + "px";
   if (p.id === "main") {
     const g = Math.round(Math.max(54, Math.min(132, Math.min(p.h * 0.28, p.w * 0.24))));
     clip.style.setProperty("--glyph", g + "px");
@@ -1050,6 +1196,7 @@ function applySize(p) {
 function bindAll() {
   PANEL_DATA.forEach((d) => {
     const p = panelById.get(d.id);
+    if (!p.visible) { p.slot = null; return; }
     const s = SLOTS[d.slot];
     p.slot = d.slot;
     p.fromSlot = d.slot;
@@ -1060,6 +1207,7 @@ function bindAll() {
     applySize(p);
   });
   refreshGhosts();
+  by_utf8xbot_5560();
 }
 
 document.getElementById("diamond").addEventListener("click", bindAll);
@@ -1108,9 +1256,386 @@ document.querySelectorAll(".seg").forEach((seg) => {
     const bar = seg.parentElement;
     bar.querySelectorAll(".seg").forEach((x) => x.classList.remove("on"));
     seg.classList.add("on");
+    by_utf8xbot_3316();
     pulse(seg);
+    by_utf8xbot_1043(["visual", "accessories", "settings"][+seg.dataset.idx] || "visual");
   });
 });
+
+let currentView = "visual";
+
+function by_utf8xbot_3316() {
+  const bar = panelEls.get("bar");
+  if (!bar) return;
+  const sb = bar.querySelector(".segbar");
+  if (!sb) return;
+  const pill = sb.querySelector(".seg-pill");
+  const on = sb.querySelector(".seg.on");
+  if (!pill || !on) return;
+  pill.style.width = on.offsetWidth + "px";
+  pill.style.transform = "translateX(" + on.offsetLeft + "px)";
+}
+
+function by_utf8xbot_1503(parent, spec) {
+  const row = el("div", "ctl");
+  const lab = el("div", "ctl-label", spec.l);
+  const val = el("div", "ctl-val", "");
+  const sl = el("div", "sl no-drag");
+  sl.innerHTML = '<div class="trk"></div><div class="fil"></div><div class="kn"></div>';
+  const fil = sl.querySelector(".fil");
+  const kn = sl.querySelector(".kn");
+  const paint = (v) => {
+    const k = Math.max(0, Math.min(1, (v - spec.min) / (spec.max - spec.min)));
+    const pos = "calc(7px + (100% - 14px) * " + k + ")";
+    fil.style.width = pos;
+    kn.style.left = pos;
+    val.textContent = spec.fmt(v);
+  };
+  const put = (v) => {
+    const raw = spec.step ? Math.round(v / spec.step) * spec.step : v;
+    const q = Math.max(spec.min, Math.min(spec.max, raw));
+    spec.set(q);
+    paint(q);
+  };
+  let live = false;
+  const at = (e) => {
+    const b = sl.getBoundingClientRect();
+    return spec.min + (spec.max - spec.min) * Math.max(0, Math.min(1, (e.clientX - b.left) / b.width));
+  };
+  sl.addEventListener("pointerdown", (e) => {
+    e.stopPropagation();
+    sl.setPointerCapture(e.pointerId);
+    live = true;
+    put(at(e));
+  });
+  sl.addEventListener("pointermove", (e) => { if (live) put(at(e)); });
+  sl.addEventListener("pointerup", () => { live = false; });
+  sl.addEventListener("pointercancel", () => { live = false; });
+  row.append(lab, sl, val);
+  parent.append(row);
+  paint(spec.get());
+  ctlSync.set(spec.k, () => paint(spec.get()));
+}
+
+function by_utf8xbot_7318(parent, spec) {
+  const row = el("div", "ctl");
+  const lab = el("div", "ctl-label", spec.l);
+  const tg = el("div", "tg no-drag" + (spec.get() ? " on" : ""), "<i></i>");
+  tg.addEventListener("pointerdown", (e) => e.stopPropagation());
+  tg.addEventListener("click", () => {
+    const v = !tg.classList.contains("on");
+    tg.classList.toggle("on", v);
+    spec.set(v);
+  });
+  row.append(lab, tg);
+  parent.append(row);
+  ctlSync.set(spec.k, () => tg.classList.toggle("on", !!spec.get()));
+}
+
+function by_utf8xbot_8761(parent, label, cls, fn) {
+  const b = el("button", "set-btn no-drag" + (cls ? " " + cls : ""), label);
+  b.type = "button";
+  b.addEventListener("pointerdown", (e) => e.stopPropagation());
+  b.addEventListener("click", (e) => {
+    e.stopPropagation();
+    fn();
+    pulse(b);
+  });
+  parent.append(b);
+  return b;
+}
+
+function by_utf8xbot_4491(card) {
+  const row = el("div", "ctl");
+  row.append(el("div", "ctl-label", "акцент"));
+  const wrap = el("div", "swatches");
+  [0, 6, 30, 138, 200, 275].forEach((h) => {
+    const sw = el("div", "swatch no-drag" + (CFG.accent === h ? " on" : ""));
+    sw.style.background = h === 0 ? "#d7d7dd" : "hsl(" + h + " 42% 74%)";
+    sw.dataset.hue = String(h);
+    sw.addEventListener("pointerdown", (e) => {
+      e.stopPropagation();
+      e.preventDefault();
+      applyAccent(h);
+    });
+    wrap.append(sw);
+  });
+  ctlSync.set("accent-swatches", () => {
+    wrap.querySelectorAll(".swatch").forEach((sw) => {
+      sw.classList.toggle("on", +sw.dataset.hue === CFG.accent);
+    });
+  });
+  row.append(wrap);
+  card.append(row);
+}
+
+function by_utf8xbot_4410(card) {
+  card.append(el("h4", "", "интерфейс"));
+  by_utf8xbot_4491(card);
+  by_utf8xbot_1503(card, {
+    k: "accent", l: "оттенок", min: 0, max: 360, step: 1,
+    get: () => CFG.accent,
+    set: (v) => applyAccent(v),
+    fmt: (v) => (v === 0 ? "серый" : Math.round(v) + "°"),
+  });
+  by_utf8xbot_1503(card, {
+    k: "opacity", l: "плотность", min: 0.5, max: 1, step: 0.01,
+    get: () => CFG.opacity,
+    set: (v) => { CFG.opacity = v; by_utf8xbot_8127(); },
+    fmt: (v) => Math.round(v * 100) + "%",
+  });
+  by_utf8xbot_1503(card, {
+    k: "blur", l: "размытие", min: 0, max: 26, step: 1,
+    get: () => CFG.blur,
+    set: (v) => { CFG.blur = v; by_utf8xbot_8127(); },
+    fmt: (v) => Math.round(v) + " px",
+  });
+  by_utf8xbot_1503(card, {
+    k: "scale", l: "масштаб", min: 0.8, max: 1.25, step: 0.01,
+    get: () => CFG.scale,
+    set: (v) => { CFG.scale = v; by_utf8xbot_8127(); },
+    fmt: (v) => Math.round(v * 100) + "%",
+  });
+  by_utf8xbot_1503(card, {
+    k: "radius", l: "скругление", min: 0.5, max: 1.5, step: 0.05,
+    get: () => CFG.radius,
+    set: (v) => { CFG.radius = v; by_utf8xbot_8127(); },
+    fmt: (v) => Math.round(v * 100) + "%",
+  });
+}
+
+function by_utf8xbot_7702(card) {
+  card.append(el("h4", "", "анимации"));
+  by_utf8xbot_1503(card, {
+    k: "tempo", l: "темп пружин", min: 0.4, max: 2, step: 0.05,
+    get: () => CFG.tempo,
+    set: (v) => { CFG.tempo = v; by_utf8xbot_8127(); },
+    fmt: (v) => v.toFixed(2) + "x",
+  });
+  by_utf8xbot_1503(card, {
+    k: "tilt", l: "наклон переноса", min: 0, max: 0.0009, step: 0.00005,
+    get: () => CFG.tilt,
+    set: (v) => { CFG.tilt = v; by_utf8xbot_8127(); },
+    fmt: (v) => ((v / 0.00035) * 2).toFixed(1) + "°",
+  });
+  by_utf8xbot_1503(card, {
+    k: "grab", l: "увеличение", min: 1, max: 1.08, step: 0.005,
+    get: () => CFG.grab,
+    set: (v) => { CFG.grab = v; by_utf8xbot_8127(); },
+    fmt: (v) => "+" + ((v - 1) * 100).toFixed(1) + "%",
+  });
+  by_utf8xbot_7318(card, {
+    k: "snap", l: "прилипание к слотам",
+    get: () => CFG.snap,
+    set: (v) => { CFG.snap = v; by_utf8xbot_8127(); },
+  });
+  by_utf8xbot_7318(card, {
+    k: "keepIn", l: "держать в окне",
+    get: () => CFG.keepIn,
+    set: (v) => { CFG.keepIn = v; by_utf8xbot_8127(); },
+  });
+  by_utf8xbot_1503(card, {
+    k: "bounce", l: "отскок посадки", min: 0, max: 0.14, step: 0.01,
+    get: () => CFG.bounce,
+    set: (v) => { CFG.bounce = v; by_utf8xbot_8127(); },
+    fmt: (v) => Math.round(v * 100) + "%",
+  });
+}
+
+function by_utf8xbot_2299(foot) {
+  by_utf8xbot_7318(foot, {
+    k: "showSlots", l: "подсветка слотов",
+    get: () => CFG.showSlots,
+    set: (v) => { CFG.showSlots = v; by_utf8xbot_8127(); },
+  });
+  by_utf8xbot_7318(foot, {
+    k: "remember", l: "запоминать",
+    get: () => CFG.remember,
+    set: (v) => {
+      CFG.remember = v;
+      if (v) by_utf8xbot_5561();
+      else by_utf8xbot_6624();
+    },
+  });
+  by_utf8xbot_8761(foot, "сохранить", "accent spacer", () => by_utf8xbot_5561());
+  by_utf8xbot_8761(foot, "сброс раскладки", "", () => by_utf8xbot_1188());
+  by_utf8xbot_8761(foot, "сброс настроек", "danger", () => by_utf8xbot_6612());
+}
+
+function by_utf8xbot_3391(clip, data) {
+  const body = el("div", "set-body");
+  const head = el("div", "set-head");
+  head.append(el("div", "set-title", data.title), el("div", "set-sub", data.sub));
+  const cols = el("div", "set-cols");
+  const c1 = el("div", "set-card");
+  const c2 = el("div", "set-card");
+  cols.append(c1, c2);
+  const foot = el("div", "set-foot");
+  body.append(head, cols, foot);
+  clip.append(body);
+  by_utf8xbot_4410(c1);
+  by_utf8xbot_7702(c2);
+  by_utf8xbot_2299(foot);
+}
+
+function by_utf8xbot_8127() {
+  const root = document.documentElement;
+  const a = Math.max(0.4, Math.min(1, CFG.opacity));
+  root.style.setProperty("--blur", CFG.blur.toFixed(1) + "px");
+  root.style.setProperty("--sat", CFG.blur > 0 ? "1.12" : "1");
+  root.style.setProperty("--panel-a", "rgba(83, 83, 90, " + a + ")");
+  root.style.setProperty("--panel-2-a", "rgba(92, 92, 100, " + a + ")");
+  root.style.setProperty("--hi-a", "rgba(182, 182, 189, " + a + ")");
+  root.style.setProperty("--hi-2-a", "rgba(192, 192, 199, " + a + ")");
+  ghostsEl.classList.toggle("off", !CFG.showSlots);
+  panelById.forEach((p) => applySize(p));
+  fitStage();
+  ctlSync.forEach((fn) => fn());
+  by_utf8xbot_5560();
+}
+
+let by_utf8xbot_save_timer = null;
+
+function by_utf8xbot_5560() {
+  clearTimeout(by_utf8xbot_save_timer);
+  by_utf8xbot_save_timer = setTimeout(by_utf8xbot_5561, 220);
+}
+
+function by_utf8xbot_5561() {
+  if (!CFG.remember) return;
+  const layout = {};
+  panelById.forEach((p, id) => {
+    layout[id] = {
+      slot: p.slot,
+      x: Math.round(p.x), y: Math.round(p.y),
+      w: Math.round(p.w), h: Math.round(p.h),
+    };
+  });
+  try {
+    localStorage.setItem(STORE_KEY, JSON.stringify({ cfg: CFG, layout: layout, view: currentView }));
+  } catch (e) {}
+}
+
+function by_utf8xbot_6624() {
+  try { localStorage.removeItem(STORE_KEY); } catch (e) {}
+}
+
+function by_utf8xbot_9042() {
+  try {
+    const raw = localStorage.getItem(STORE_KEY);
+    return raw ? JSON.parse(raw) : null;
+  } catch (e) {
+    return null;
+  }
+}
+
+function by_utf8xbot_3884(layout) {
+  Object.keys(layout).forEach((id) => {
+    const p = panelById.get(id);
+    const l = layout[id];
+    if (!p || !l || !p.visible) return;
+    if (l.slot && SLOTS[l.slot]) {
+      const occ = occupantOf(l.slot);
+      if (occ && occ !== p) return;
+      setSlot(p, l.slot);
+    } else if (l.x !== undefined && l.y !== undefined) {
+      p.slot = null;
+      if (l.w) p.w = l.w;
+      if (l.h) p.h = l.h;
+      p.x = l.x; p.y = l.y; p.tx = l.x; p.ty = l.y;
+      applySize(p);
+    }
+  });
+  refreshGhosts();
+}
+
+function by_utf8xbot_1188() {
+  panelById.forEach((p) => {
+    if (!p.visible) { p.slot = null; return; }
+    const slot = p.homeSlot;
+    const occ = occupantOf(slot);
+    if (occ && occ !== p) occ.slot = null;
+    setSlot(p, slot);
+    p.vx += 60; p.vy -= 40;
+  });
+  refreshGhosts();
+  by_utf8xbot_5561();
+}
+
+function by_utf8xbot_6612() {
+  Object.keys(CFG_DEFAULT).forEach((k) => { CFG[k] = CFG_DEFAULT[k]; });
+  applyAccent(CFG.accent);
+  by_utf8xbot_8127();
+  by_utf8xbot_1188();
+}
+
+function by_utf8xbot_5533(name) {
+  const set = CARD_SETS[name];
+  if (!set) return;
+  Object.keys(set).forEach((id) => {
+    const node = panelEls.get(id);
+    if (!node) return;
+    const title = node.querySelector(".panel-title");
+    if (title && title.textContent !== set[id].title) {
+      title.textContent = set[id].title;
+      pulse(title);
+    }
+    const rows = node.querySelector(".rows");
+    if (!rows) return;
+    rows.innerHTML = "";
+    set[id].rows.forEach((r) => rows.append(rowNode(r)));
+    requestAnimationFrame(() => updateFade(panelById.get(id)));
+  });
+}
+
+function by_utf8xbot_1043(name, instant) {
+  currentView = name;
+  by_utf8xbot_5533(name);
+  const set = VIEWS[name] || VIEWS.visual;
+  PANEL_DATA.forEach((d) => {
+    const p = panelById.get(d.id);
+    const node = panelEls.get(d.id);
+    const want = set.indexOf(d.id) >= 0;
+    if (want && !p.visible) {
+      p.visible = true;
+      node.classList.remove("gone", "leaving");
+      const slot = SLOTS[p.homeSlot] ? p.homeSlot : d.slot;
+      const occ = occupantOf(slot);
+      if (occ && occ !== p) occ.slot = null;
+      setSlot(p, slot);
+      if (instant) {
+        p.x = p.tx; p.y = p.ty; p.sc = 1; p.vsc = 0;
+        p.k = 190; p.c = 16.5;
+      } else {
+        const cx = DESIGN_W / 2 - p.w / 2;
+        const cy = DESIGN_H / 2 - p.h / 2;
+        p.x = p.tx + (cx - p.tx) * 0.5;
+        p.y = p.ty + (cy - p.ty) * 0.5;
+        p.sc = 0.9; p.vsc = 0.7;
+        p.k = 112; p.c = 12.5;
+        setTimeout(() => { if (p.visible) { p.k = 190; p.c = 16.5; } }, 820);
+      }
+    } else if (!want && p.visible) {
+      p.visible = false;
+      p.slot = null;
+      if (instant) {
+        node.classList.add("gone");
+        node.classList.remove("leaving");
+      } else {
+        node.classList.add("leaving");
+        setTimeout(() => {
+          if (!p.visible) {
+            node.classList.add("gone");
+            node.classList.remove("leaving");
+          }
+        }, 300);
+      }
+    }
+  });
+  refreshGhosts();
+  by_utf8xbot_3316();
+  by_utf8xbot_5560();
+}
 
 const searchInput = document.getElementById("search-input");
 searchInput.addEventListener("input", () => {
@@ -1125,7 +1650,7 @@ searchInput.addEventListener("input", () => {
 let last = 0;
 function tick(ts) {
   const now = ts / 1000;
-  const dt = Math.min(0.05, last ? now - last : 1 / 60);
+  const dt = Math.min(0.05, last ? now - last : 1 / 60) * CFG.tempo;
   last = now;
 
   panelById.forEach((p) => {
@@ -1143,9 +1668,17 @@ function tick(ts) {
     const targetRot = p.dragging ? p.vrot * 0.6 : 0;
     p.rot += (targetRot - p.rot) * Math.min(1, dt * 12);
 
+    if (CFG.keepIn) {
+      const minX = 12, minY = 12, maxX = DESIGN_W - p.w - 12, maxY = DESIGN_H - p.h - 12;
+      if (p.tx < minX) p.tx = minX;
+      if (p.ty < minY) p.ty = minY;
+      if (p.tx > maxX) p.tx = maxX;
+      if (p.ty > maxY) p.ty = maxY;
+    }
+
     const node = panelEls.get(p.id);
     node.style.transform =
-      "translate3d(" + p.x.toFixed(2) + "px," + p.y.toFixed(2) + "px,0) rotate(" + (p.rot * 57.2958).toFixed(2) + "deg) scale(" + p.sc.toFixed(4) + ")";
+      "translate(" + p.x.toFixed(2) + "px," + p.y.toFixed(2) + "px) rotate(" + (p.rot * 57.2958).toFixed(2) + "deg) scale(" + p.sc.toFixed(4) + ")";
   });
 
   requestAnimationFrame(tick);
@@ -1167,8 +1700,14 @@ window.addEventListener("pointermove", (e) => {
 const hAccent = document.getElementById("h-accent");
 const hAccentV = document.getElementById("h-accent-v");
 function applyAccent(v) {
+  CFG.accent = v;
   const root = document.documentElement;
   hAccent.value = String(v);
+  const syncAccent = ctlSync.get("accent");
+  if (syncAccent) syncAccent();
+  const syncSw = ctlSync.get("accent-swatches");
+  if (syncSw) syncSw();
+  by_utf8xbot_5560();
   if (v === 0) {
     root.style.setProperty("--acc", "#d7d7dd");
     root.style.setProperty("--acc-dark", "#34343a");
@@ -1187,6 +1726,19 @@ window.addEventListener("keydown", (e) => {
   if (e.target && e.target.tagName === "INPUT") return;
   if (e.key === "h" || e.key === "H") hud.classList.toggle("hidden");
 });
+window.addEventListener("pagehide", by_utf8xbot_5561);
+
+const by_utf8xbot_7001 = by_utf8xbot_9042();
+if (by_utf8xbot_7001 && by_utf8xbot_7001.cfg) Object.assign(CFG, by_utf8xbot_7001.cfg);
+by_utf8xbot_8127();
+applyAccent(CFG.accent);
+if (by_utf8xbot_7001 && by_utf8xbot_7001.layout) by_utf8xbot_3884(by_utf8xbot_7001.layout);
+by_utf8xbot_1043(by_utf8xbot_7001 && by_utf8xbot_7001.view ? by_utf8xbot_7001.view : "visual", true);
+by_utf8xbot_3316();
+document.querySelectorAll(".seg").forEach((seg, i) => {
+  seg.classList.toggle("on", i === ["visual", "accessories", "settings"].indexOf(currentView));
+});
+by_utf8xbot_3316();
 </script>
 </body>
 </html>
