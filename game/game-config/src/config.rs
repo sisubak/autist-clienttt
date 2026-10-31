@@ -856,6 +856,255 @@ pub struct ConfigBestClient {
 
 #[config_default]
 #[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigPeekggClient {
+    /// Key that opens the peekgg menu.
+    #[default = "Insert"]
+    pub key: String,
+    /// Screen dim behind the menu in percent.
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 55]
+    pub opacity: i64,
+    /// Menu scale in percent.
+    #[conf_valid(range(min = 70, max = 130))]
+    #[default = 100]
+    pub scale: i64,
+    /// Target aura.
+    #[default = 0]
+    pub aura: i64,
+    #[conf_valid(range(min = 100, max = 300))]
+    #[default = 150]
+    pub aura_radius: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 65]
+    pub aura_alpha: i64,
+    #[default = ConfRgb { r: 255, g: 140, b: 60 }]
+    pub aura_color: ConfRgb,
+    #[default = 0]
+    pub aura_rainbow: i64,
+    /// Tee outline.
+    #[default = 0]
+    pub outline: i64,
+    #[default = ConfRgb { r: 120, g: 200, b: 255 }]
+    pub outline_color: ConfRgb,
+    #[default = 0]
+    pub outline_rainbow: i64,
+    /// Jump ring.
+    #[default = 0]
+    pub jump_ring: i64,
+    #[default = ConfRgb { r: 160, g: 255, b: 180 }]
+    pub ring_color: ConfRgb,
+    #[default = 0]
+    pub ring_rainbow: i64,
+    /// Worn accessory index.
+    #[conf_valid(range(min = 0, max = 5))]
+    #[default = 0]
+    pub accessory: i64,
+    #[default = ConfRgb { r: 255, g: 200, b: 90 }]
+    pub hat_color: ConfRgb,
+    #[default = 0]
+    pub hat_rainbow: i64,
+    #[default = 1]
+    pub show_hud: i64,
+    #[default = 1]
+    pub show_hud_health_ammo: i64,
+    #[default = 1]
+    pub show_hud_ddrace: i64,
+    #[default = 0]
+    pub show_hud_jumps_indicator: i64,
+    #[default = 1]
+    pub show_hud_timer: i64,
+    #[default = 0]
+    pub show_hud_time_cp_diff: i64,
+    #[default = 0]
+    pub show_hud_player_position: i64,
+    #[default = 0]
+    pub show_hud_player_speed: i64,
+    #[default = 0]
+    pub show_hud_spectator_count: i64,
+    #[default = 0]
+    pub scoreboard_on_death: i64,
+    #[default = 1]
+    pub show_ids: i64,
+    #[conf_valid(range(min = 0, max = 2))]
+    #[default = 2]
+    pub show_others: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 50]
+    pub show_others_alpha: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 100]
+    pub overlay_entities: i64,
+    #[default = 0]
+    pub show_freeze_bars: i64,
+    #[conf_valid(range(min = 0, max = 2))]
+    #[default = 1]
+    pub show_hook_coll_own: i64,
+    #[conf_valid(range(min = 0, max = 2))]
+    #[default = 0]
+    pub show_hook_coll_other: i64,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigPeekggBc {
+    #[default = 0]
+    pub show_real_hitbox: i64,
+    #[default = 0]
+    pub show_correct_checkpoint: i64,
+    #[default = 0]
+    pub show_points_in_tab: i64,
+    #[default = 0]
+    pub show_spectator_names: i64,
+    #[default = 0]
+    pub show_vote_percentage: i64,
+    #[conf_valid(range(min = 50, max = 100))]
+    #[default = 100]
+    pub scoreboard_scale: i64,
+    #[default = 0]
+    pub nameplate_gradient: i64,
+    #[conf_valid(range(min = 0, max = 2))]
+    #[default = 0]
+    pub nameplate_gradient_mode: i64,
+    #[default = 0]
+    pub nameplate_gradient_clan: i64,
+    #[default = 0]
+    pub nameplate_gradient_everything: i64,
+    #[conf_valid(range(min = 1, max = 100))]
+    #[default = 25]
+    pub nameplate_gradient_animate_speed: i64,
+    #[default = 0]
+    pub freeze_pull: i64,
+    #[default = 0]
+    pub freeze_pull_shield: i64,
+    #[conf_valid(range(min = 60, max = 260))]
+    #[default = 160]
+    pub freeze_pull_range: i64,
+    #[conf_valid(range(min = 1, max = 8))]
+    #[default = 3]
+    pub freeze_pull_strands: i64,
+    #[conf_valid(range(min = 0, max = 300))]
+    #[default = 120]
+    pub freeze_pull_sparks: i64,
+    #[default = 0]
+    pub freeze_pull_hook_color: i64,
+    #[default = ConfRgb { r: 150, g: 220, b: 255 }]
+    pub freeze_pull_color: ConfRgb,
+    #[conf_valid(range(min = 0, max = 8))]
+    #[default = 0]
+    pub hook_style: i64,
+    #[default = 1]
+    pub hook_tip: i64,
+    #[conf_valid(range(min = 200, max = 4000))]
+    #[default = 1200]
+    pub hook_charge_time: i64,
+    #[conf_valid(range(min = 50, max = 200))]
+    #[default = 100]
+    pub hook_size: i64,
+    #[default = 0]
+    pub laser_glow: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 50]
+    pub laser_glow_power: i64,
+    #[default = 0]
+    pub shotgun_glow: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 50]
+    pub shotgun_glow_power: i64,
+    #[default = 0]
+    pub jelly_tee: i64,
+    #[default = 0]
+    pub jelly_tee_others: i64,
+    #[conf_valid(range(min = 1, max = 500))]
+    #[default = 100]
+    pub jelly_tee_strength: i64,
+    #[default = 0]
+    pub gores_mode: i64,
+    #[default = 0]
+    pub particles_3d: i64,
+    #[conf_valid(range(min = 1, max = 600))]
+    #[default = 150]
+    pub particles_3d_density: i64,
+    #[conf_valid(range(min = 2, max = 200))]
+    #[default = 40]
+    pub particles_3d_size_max: i64,
+    #[default = 1]
+    pub particles_3d_glow: i64,
+    #[default = 0]
+    pub cinematic_camera: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 50]
+    pub cinematic_camera_strength: i64,
+    #[default = 0]
+    pub dynamic_fov: i64,
+    #[default = 0]
+    pub better_spectate: i64,
+    #[default = 1]
+    pub spec_moved_notify: i64,
+    #[default = 0]
+    pub cursor_trail: i64,
+    #[conf_valid(range(min = 10, max = 100))]
+    #[default = 50]
+    pub cursor_trail_size: i64,
+    #[conf_valid(range(min = 0, max = 100))]
+    #[default = 60]
+    pub cursor_trail_opacity: i64,
+    #[default = 0]
+    pub atmosphere: i64,
+    #[conf_valid(range(min = 0, max = 3))]
+    #[default = 0]
+    pub weather: i64,
+    #[conf_valid(range(min = 25, max = 300))]
+    #[default = 100]
+    pub weather_amount: i64,
+    #[conf_valid(range(min = 25, max = 300))]
+    #[default = 100]
+    pub weather_rain_size: i64,
+    #[conf_valid(range(min = 25, max = 300))]
+    #[default = 100]
+    pub weather_rain_speed: i64,
+    #[conf_valid(range(min = 0, max = 2))]
+    #[default = 0]
+    pub custom_aspect_ratio_mode: i64,
+    #[conf_valid(range(min = 0, max = 8))]
+    #[default = 0]
+    pub custom_aspect_ratio: i64,
+    #[conf_valid(range(min = 1, max = 100))]
+    #[default = 16]
+    pub custom_aspect_ratio_num: i64,
+    #[conf_valid(range(min = 1, max = 100))]
+    #[default = 9]
+    pub custom_aspect_ratio_den: i64,
+    #[conf_valid(range(min = 0, max = 70))]
+    #[default = 0]
+    pub frozen_skin_darken: i64,
+    #[default = 0]
+    pub showhud_dummy_coord_indicator: i64,
+    #[default = 1]
+    pub animations: i64,
+    #[default = 1]
+    pub confirm_quit: i64,
+    #[conf_valid(range(min = 50, max = 100))]
+    #[default = 100]
+    pub wheel_scale: i64,
+    #[default = 0]
+    pub mute_others_hook: i64,
+    #[default = 0]
+    pub mute_others_hammer: i64,
+    #[default = 0]
+    pub mute_others_air_jump: i64,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigPeekgg {
+    /// Client toggles that ddnet-rs has no equivalent for yet.
+    pub cl: ConfigPeekggClient,
+    /// BestClient feature toggles consumed by the render/feature crates.
+    pub bc: ConfigPeekggBc,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
 pub struct ConfigGame {
     /// Client related config.
     pub cl: ConfigClient,
@@ -880,6 +1129,8 @@ pub struct ConfigGame {
     pub dbg: ConfigDebug,
     /// BestClient related config.
     pub bc: ConfigBestClient,
+    /// peekgg menu config.
+    pub peekgg: ConfigPeekgg,
 }
 
 impl ConfigGame {

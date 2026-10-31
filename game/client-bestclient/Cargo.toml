@@ -6,6 +6,7 @@ edition = "2024"
 [dependencies]
 game-config = { path = "../game-config" }
 ui-base = { path = "../../lib/ui-base" }
+ui-generic = { path = "../../lib/ui-generic" }
 
 egui = { version = "0.34", default-features = false, features = ["serde"] }
 serde = { version = "1", features = ["derive"] }

@@ -11,7 +11,7 @@ use client_ui::console::utils::run_command;
 use command_parser::parser::CommandTypeRef;
 use config::config::ConfigEngine;
 use egui::{Context, CursorIcon};
-use game_config::config::ConfigGame;
+use game_config::config::{Config, ConfigGame};
 use game_interface::types::emoticons::EmoticonType;
 use game_interface::types::id_types::PlayerId;
 use game_interface::types::input::cursor::CharacterInputCursor;
@@ -673,6 +673,9 @@ impl InputHandling {
 
         open_editor: &mut bool,
 
+        ui: &mut UiState,
+        config: &mut Config,
+
         io: &Io,
     ) {
         let actions = global_binds.process();
@@ -735,6 +738,26 @@ impl InputHandling {
                 }
                 BindActionsHotkey::OpenEditor => {
                     *open_editor = true;
+                }
+                BindActionsHotkey::PeekggMenu => {
+                    if config.engine.ui.path.name == client_bestclient::peekgg::page::PEEKGG_PATH {
+                        let prev = client_bestclient::peekgg::state::by_utf8xbot_4406();
+                        config.engine.ui.path.route(if prev.is_empty() {
+                            ""
+                        } else {
+                            prev.as_str()
+                        });
+                        ui.is_ui_open = false;
+                    } else if !local_console_state.is_ui_open {
+                        let prev = config.engine.ui.path.name.clone();
+                        client_bestclient::peekgg::state::by_utf8xbot_4405(&prev);
+                        config
+                            .engine
+                            .ui
+                            .path
+                            .route(client_bestclient::peekgg::page::PEEKGG_PATH);
+                        ui.is_ui_open = true;
+                    }
                 }
             }
         }
@@ -808,6 +831,8 @@ impl InputHandling {
         mut remote_console_ui: Option<&mut UiContainer>,
         debug_hud_ui: &mut UiContainer,
         open_editor: &mut bool,
+        ui: &mut UiState,
+        config: &mut Config,
         graphics: &Graphics,
         io: &Io,
     ) {
@@ -831,6 +856,8 @@ impl InputHandling {
                                 remote_console_ui.as_mut().map(|ui| &mut ui.ui_state),
                                 &mut debug_hud_ui.ui_state,
                                 open_editor,
+                                ui,
+                                config,
                                 io,
                             );
                             global_binds.handle_key_up(&key_ev.key);
@@ -843,6 +870,8 @@ impl InputHandling {
                         remote_console_ui.as_mut().map(|ui| &mut ui.ui_state),
                         &mut debug_hud_ui.ui_state,
                         open_editor,
+                        ui,
+                        config,
                         io,
                     );
                 }

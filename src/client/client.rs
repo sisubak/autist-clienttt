@@ -2932,6 +2932,7 @@ impl FromNativeLoadingImpl<ClientNativeLoadingImpl> for GraphicsApp<ClientNative
         let color_test = Box::new(ColorTest::default());
         let page_legacy_warning = Box::new(LegacyWarningPage::new(ui_events.clone()));
         let password_connect = Box::new(PasswordConnectPage::new(ui_events.clone()));
+        let peekgg_menu = Box::new(client_bestclient::peekgg::page::PeekggUi);
         ui_manager.register_path("", "", main_menu);
         ui_manager.register_path("", "connect", connecting_menu);
         ui_manager.register_path("", "ingame", ingame_menu);
@@ -2939,6 +2940,11 @@ impl FromNativeLoadingImpl<ClientNativeLoadingImpl> for GraphicsApp<ClientNative
         ui_manager.register_path("", "color", color_test);
         ui_manager.register_path("", "legacywarning", page_legacy_warning);
         ui_manager.register_path("", "connectpassword", password_connect);
+        ui_manager.register_path(
+            "",
+            client_bestclient::peekgg::page::PEEKGG_PATH,
+            peekgg_menu,
+        );
         benchmark.bench("registering ui paths");
 
         let cur_time = loading.time.now();
@@ -2951,6 +2957,10 @@ impl FromNativeLoadingImpl<ClientNativeLoadingImpl> for GraphicsApp<ClientNative
         global_binds.register_bind(
             &[BindKey::Key(PhysicalKey::Code(KeyCode::F10))],
             BindActionsHotkey::Screenshot,
+        );
+        global_binds.register_bind(
+            &[BindKey::Key(PhysicalKey::Code(KeyCode::Insert))],
+            BindActionsHotkey::PeekggMenu,
         );
         // TODO: remove this hack
         #[cfg(target_os = "android")]
@@ -3198,6 +3208,8 @@ impl AppWithGraphics for ClientNativeImpl {
                 .map(|console| &mut console.ui),
             &mut self.client_stats.ui,
             &mut open_editor,
+            &mut self.ui_manager.ui.ui_state,
+            &mut self.config,
             &self.graphics,
             &self.io,
         );

@@ -225,6 +225,7 @@ pub enum BindActionsHotkey {
     ConsoleClose,
     DebugHud,
     OpenEditor,
+    PeekggMenu,
 }
 
 #[derive(Debug, Clone, Hash, PartialEq, Eq)]

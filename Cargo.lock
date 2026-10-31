@@ -1657,6 +1657,7 @@ dependencies = [
  "serde_json",
  "tracing",
  "ui-base",
+ "ui-generic",
 ]
 
 [[package]]
