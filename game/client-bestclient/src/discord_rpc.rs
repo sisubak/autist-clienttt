@@ -82,7 +82,10 @@ impl Conn {
         let op = u32::from_le_bytes([header[0], header[1], header[2], header[3]]);
         let len = u32::from_le_bytes([header[4], header[5], header[6], header[7]]) as usize;
         if len > 16 * 1024 * 1024 {
-            return Err(std::io::Error::new(ErrorKind::InvalidData, "frame too large"));
+            return Err(std::io::Error::new(
+                ErrorKind::InvalidData,
+                "frame too large",
+            ));
         }
         let mut body = vec![0u8; len];
         self.stream.read_exact(&mut body)?;
@@ -137,8 +140,7 @@ fn by_utf8xbot_2204(pipe_index: u64) -> std::io::Result<Box<dyn IpcStream>> {
     } else {
         vec![pipe_index - 1]
     };
-    let mut last_err =
-        std::io::Error::new(ErrorKind::NotFound, "no discord ipc named pipe");
+    let mut last_err = std::io::Error::new(ErrorKind::NotFound, "no discord ipc named pipe");
     for idx in indices {
         let path = format!(r"\\.\pipe\discord-ipc-{idx}");
         match OpenOptions::new().read(true).write(true).open(&path) {
@@ -199,7 +201,12 @@ fn by_utf8xbot_2207(app_id: &str) -> String {
         .duration_since(UNIX_EPOCH)
         .map(|d| d.as_millis())
         .unwrap_or_default();
-    format!("{}-{}-{}", app_id, now, COUNTER.fetch_add(1, Ordering::Relaxed))
+    format!(
+        "{}-{}-{}",
+        app_id,
+        now,
+        COUNTER.fetch_add(1, Ordering::Relaxed)
+    )
 }
 
 fn by_utf8xbot_2208(

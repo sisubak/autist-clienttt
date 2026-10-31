@@ -73,9 +73,11 @@ fn by_utf8xbot_3304(cfg: &ConfigBestClientDiscord) -> ConnState {
 pub fn by_utf8xbot_3301(ui: &mut egui::Ui, cfg: &mut ConfigBestClientDiscord) {
     ui.checkbox(&mut cfg.enabled, "Discord rich presence");
     ui.label(
-        RichText::new("Talks to the local discord client over its IPC pipe. No network access, no tokens.")
-            .small()
-            .weak(),
+        RichText::new(
+            "Talks to the local discord client over its IPC pipe. No network access, no tokens.",
+        )
+        .small()
+        .weak(),
     );
     ui.add_space(8.0);
 
@@ -124,12 +126,19 @@ pub fn by_utf8xbot_3301(ui: &mut egui::Ui, cfg: &mut ConfigBestClientDiscord) {
 
     let state = by_utf8xbot_3304(cfg);
     let (color, label) = match state {
-        ConnState::Connected => (egui::Color32::from_rgb(120, 220, 140), state.by_utf8xbot_2201()),
-        ConnState::Connecting => (egui::Color32::from_rgb(230, 200, 120), state.by_utf8xbot_2201()),
+        ConnState::Connected => (
+            egui::Color32::from_rgb(120, 220, 140),
+            state.by_utf8xbot_2201(),
+        ),
+        ConnState::Connecting => (
+            egui::Color32::from_rgb(230, 200, 120),
+            state.by_utf8xbot_2201(),
+        ),
         ConnState::Disabled => (egui::Color32::GRAY, state.by_utf8xbot_2201()),
-        ConnState::Unavailable | ConnState::Failed => {
-            (egui::Color32::from_rgb(230, 130, 130), state.by_utf8xbot_2201())
-        }
+        ConnState::Unavailable | ConnState::Failed => (
+            egui::Color32::from_rgb(230, 130, 130),
+            state.by_utf8xbot_2201(),
+        ),
     };
     ui.horizontal(|ui| {
         ui.label("Status:");

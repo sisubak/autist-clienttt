@@ -56,12 +56,8 @@ fn by_utf8xbot_9110(style: &mut Style, theme: UiTheme) {
     };
 
     let visuals = &mut style.visuals;
-    visuals.selection.bg_fill = Color32::from_rgba_unmultiplied(
-        theme.accent.r(),
-        theme.accent.g(),
-        theme.accent.b(),
-        140,
-    );
+    visuals.selection.bg_fill =
+        Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 140);
     visuals.selection.stroke = Stroke::new(stroke_width, theme.accent);
     visuals.hyperlink_color = theme.accent;
     visuals.slider_trailing_fill = true;
@@ -73,25 +69,13 @@ fn by_utf8xbot_9110(style: &mut Style, theme: UiTheme) {
     widgets.active.corner_radius = rounding;
     widgets.open.corner_radius = rounding;
 
-    widgets.hovered.bg_fill = Color32::from_rgba_unmultiplied(
-        theme.accent.r(),
-        theme.accent.g(),
-        theme.accent.b(),
-        60,
-    );
-    widgets.hovered.weak_bg_fill = Color32::from_rgba_unmultiplied(
-        theme.accent.r(),
-        theme.accent.g(),
-        theme.accent.b(),
-        40,
-    );
+    widgets.hovered.bg_fill =
+        Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 60);
+    widgets.hovered.weak_bg_fill =
+        Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 40);
     widgets.hovered.bg_stroke = Stroke::new(stroke_width, theme.accent);
-    widgets.active.bg_fill = Color32::from_rgba_unmultiplied(
-        theme.accent.r(),
-        theme.accent.g(),
-        theme.accent.b(),
-        110,
-    );
+    widgets.active.bg_fill =
+        Color32::from_rgba_unmultiplied(theme.accent.r(), theme.accent.g(), theme.accent.b(), 110);
     widgets.active.bg_stroke = Stroke::new(stroke_width, theme.accent);
 
     if theme.better_scrollbar {

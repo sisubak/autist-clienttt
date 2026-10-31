@@ -4,9 +4,11 @@ use game_config::config::ConfigBestClientUi;
 pub fn by_utf8xbot_3201(ui: &mut egui::Ui, cfg: &mut ConfigBestClientUi) {
     ui.checkbox(&mut cfg.better_ui, "Better UI");
     ui.label(
-        RichText::new("Applies the accent color, widget rounding and animation speed to every UI page.")
-            .small()
-            .weak(),
+        RichText::new(
+            "Applies the accent color, widget rounding and animation speed to every UI page.",
+        )
+        .small()
+        .weak(),
     );
     ui.add_space(8.0);
 
