@@ -51,3 +51,11 @@ CSS-переменные в `:root` — зеркало `MenuTheme`. Быстры
 `data.rs` — это `SCard`/`SRow` из оригинала: те же подписи, порядок, опции, min/max, суффиксы,
 цвета карточек, условия показа (`show_if`). Добавить/убрать карточку или строку — правка
 только этого файла; никакого кода отрисовки трогать не нужно.
+
+## Превью
+
+- `game/client-bestclient/preview/menu_exact.html` — самодостаточная копия меню peekgg
+  (canvas, числа 1:1 из `peekgg_gui.cpp`, шрифт Actay Wide Bold вшит). Подробности и
+  список осознанных расхождений — `preview/PREVIEW_1TO1.md`.
+- `preview/menu_exact.template.html` + `preview/build_menu_exact.py` — исходник превью
+  и сборщик, который вшивает шрифты.

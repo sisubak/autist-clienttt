@@ -1,0 +1,1166 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>peekgg menu — 1:1</title>
+<style>
+  @font-face { font-family: "PeekggFace"; src: url(data:font/otf;base64,__ACTAY__) format("opentype"); }
+  @font-face { font-family: "PeekggIcons"; src: url(data:font/otf;base64,__ICONS__) format("opentype"); }
+  html, body { margin: 0; height: 100%; background: #05060a; overflow: hidden; }
+  canvas { display: block; width: 100vw; height: 100vh; cursor: none; }
+  #dev {
+    position: fixed; left: 50%; bottom: 8px; transform: translateX(-50%);
+    display: flex; gap: 14px; align-items: center;
+    font: 500 11px/1 ui-sans-serif, system-ui, sans-serif;
+    color: #8b90a3; background: rgba(9, 11, 17, .82);
+    border: 1px solid rgba(255, 255, 255, .10); border-radius: 7px;
+    padding: 6px 10px; user-select: none; z-index: 10;
+  }
+  #dev label { display: flex; gap: 5px; align-items: center; white-space: nowrap; }
+  #dev input[type=range] { width: 72px; }
+  #dev b { color: #c9cddc; font-weight: 600; }
+  #dev.hidden { display: none; }
+</style>
+</head>
+<body>
+<canvas id="cv"></canvas>
+<div id="dev">
+  <label>accent <input id="d-accent" type="range" min="0" max="12" step="1" value="2"><b id="d-accent-v">2</b></label>
+  <label>scale <input id="d-scale" type="range" min="70" max="130" step="1" value="100"><b id="d-scale-v">100</b></label>
+  <label>opacity <input id="d-opacity" type="range" min="0" max="100" step="1" value="62"><b id="d-opacity-v">62</b></label>
+  <label><input id="d-offline" type="checkbox"> offline</label>
+  <label><input id="d-cards" type="checkbox"> всё раскрыто</label>
+  <label>H — панель</label>
+</div>
+<script>
+"use strict";
+
+
+const cv = document.getElementById("cv");
+const ctx = cv.getContext("2d", { alpha: false });
+
+const cfg = {
+  BcNameplateGradient: 0, BcNameplateGradientMode: 0, BcNameplateGradientClan: 0,
+  BcNameplateGradientEverything: 0, BcNameplateGradientAnimateSpeed: 35,
+  BcFreezePull: 0, BcFreezePullShield: 1, BcFreezePullRange: 140, BcFreezePullStrands: 4,
+  BcFreezePullSparks: 100, BcFreezePullHookColor: 0, BcFreezePullColor: 9240520,
+  BcHookStyle: 0, BcHookTip: 1, BcHookChargeTime: 1200, BcHookSize: 100,
+  BcCustomAspectRatioMode: 0, BcCustomAspectRatio: 178, BcCustomAspectRatioNum: 16, BcCustomAspectRatioDen: 9,
+  BcLaserGlow: 0, BcLaserGlowPower: 50, BcShotgunGlow: 0, BcShotgunGlowPower: 50,
+  ClShowOthers: 0, ClShowOthersAlpha: 40, ClOverlayEntities: 0, ClShowFreezeBars: 1,
+  BcFrozenSkinDarken: 0, ClShowHookCollOwn: 1, ClShowHookCollOther: 1, BcShowhudDummyCoordIndicator: 0,
+  BcJellyTee: 0, BcJellyTeeOthers: 0, BcJellyTeeStrength: 500, BcGoresMode: 0,
+  Bc3dParticles: 0, Bc3dParticlesDensity: 50, Bc3dParticlesSizeMax: 8, Bc3dParticlesGlow: 0,
+  BcCinematicCamera: 0, BcCinematicCameraStrength: 50, BcDynamicFov: 0, BcBetterSpectate: 0,
+  BcSpecMovedNotify: 0,
+  BcCursorTrail: 0, BcCursorTrailTrailSize: 70, BcCursorTrailOpacity: 80,
+  ClPeekggAura: 0, ClPeekggAuraRadius: 100, ClPeekggAuraAlpha: 55, ClPeekggAuraColorC: 0, ClPeekggAuraRainbow: 0,
+  ClPeekggOutline: 0, ClPeekggOutlineColorC: 0, ClPeekggOutlineRainbow: 0,
+  ClPeekggJumpRing: 0, ClPeekggRingColorC: 0, ClPeekggRingRainbow: 0,
+  BcAtmosphere: 0, BcWeather: 0, BcWeatherAmount: 100, BcWeatherRainSize: 100, BcWeatherRainSpeed: 100,
+  ClPeekggAccessory: 0, ClPeekggHatColorC: 0, ClPeekggHatRainbow: 0,
+  ClPeekggKey: "INSERT", ClShowfps: 0, BcAnimations: 1, BcConfirmQuit: 0, BcWheelScale: 100,
+  BcMuteOthersHook: 0, BcMuteOthersHammer: 0, BcMuteOthersAirJump: 0,
+  ClPeekggOpacity: 62, ClPeekggScale: 100, ClPeekggAccent: 2, ClPeekggAccentC: 0,
+};
+const ui = { offline: false, expanded: false };
+
+const C = (r, g, b, a) => ({ r: r, g: g, b: b, a: a === undefined ? 1 : a });
+const withA = (c, a) => C(c.r, c.g, c.b, a);
+const mixc = (a, b, t) => C(a.r + (b.r - a.r) * t, a.g + (b.g - a.g) * t, a.b + (b.b - a.b) * t, a.a + (b.a - a.a) * t);
+const css = (c) => "rgba(" + (c.r * 255) + "," + (c.g * 255) + "," + (c.b * 255) + "," + c.a + ")";
+
+const PALETTE = [
+  C(0.93, 0.80, 0.52), C(0.96, 0.96, 0.98), C(0.90, 0.20, 0.22), C(0.96, 0.60, 0.22),
+  C(0.97, 0.86, 0.32), C(0.45, 0.82, 0.40), C(0.35, 0.80, 0.83), C(0.34, 0.55, 0.95),
+  C(0.62, 0.45, 0.95), C(0.95, 0.50, 0.78), C(0.30, 0.78, 0.66), C(0.72, 0.73, 0.78),
+];
+const ColText = () => C(0.97, 0.97, 1.00);
+const ColMuted = () => C(0.78, 0.79, 0.86);
+const ColDim = () => C(0.58, 0.59, 0.67);
+const ColHover = () => C(1, 1, 1, 0.07);
+let tNow = 0;
+function hslToRgb(h, s, l, a) {
+  const f = (n) => {
+    const k = (n + h * 12) % 12;
+    return l - s * Math.min(l, 1 - l) * Math.max(-1, Math.min(k - 3, Math.min(9 - k, 1)));
+  };
+  return C(f(0), f(8), f(4), a);
+}
+function ColAccent() {
+  if (cfg.ClPeekggAccentC !== 0) return hslToRgb(((cfg.ClPeekggAccentC >>> 24) & 0xff) / 255, ((cfg.ClPeekggAccentC >>> 16) & 0xff) / 255, ((cfg.ClPeekggAccentC >>> 8) & 0xff) / 255, 1);
+  if (cfg.ClPeekggAccent === 12) return hslToRgb((tNow * 0.15) % 1.0, 0.85, 0.60, 1.0);
+  return PALETTE[Math.max(0, Math.min(11, cfg.ClPeekggAccent))];
+}
+function packedColor(p) {
+  const h = ((p >>> 24) & 0xff) / 255, s = ((p >>> 16) & 0xff) / 255, l = ((p >>> 8) & 0xff) / 255, a = (p & 0xff) / 255;
+  const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+  const p2 = 2 * l - q;
+  const ch = (tt) => {
+    let t = tt;
+    if (t < 0) t += 1;
+    if (t > 1) t -= 1;
+    if (t < 1 / 6) return p2 + (q - p2) * 6 * t;
+    if (t < 1 / 2) return q;
+    if (t < 2 / 3) return p2 + (q - p2) * (2 / 3 - t) * 6;
+    return p2;
+  };
+  return C(ch(h + 1 / 3), ch(h), ch(h - 1 / 3), a);
+}
+
+function pathRR(x, y, w, h, radius) {
+  const r = Math.max(0, Math.min(radius, Math.min(w, h) * 0.5));
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + w, y, x + w, y + h, r);
+  ctx.arcTo(x + w, y + h, x, y + h, r);
+  ctx.arcTo(x, y + h, x, y, r);
+  ctx.arcTo(x, y, x + w, y, r);
+  ctx.closePath();
+}
+function fillRR(R, radius, color) {
+  if (R.w <= 0 || R.h <= 0 || color.a <= 0) return;
+  ctx.fillStyle = css(color);
+  pathRR(R.x, R.y, R.w, R.h, radius);
+  ctx.fill();
+}
+function outlineRR(R, radius, thickness, color) {
+  if (R.w <= 1 || R.h <= 1 || color.a <= 0) return;
+  const rad = Math.min(Math.max(radius, 1), Math.min(R.w, R.h) * 0.5);
+  const T = Math.max(0.8, thickness);
+  ctx.strokeStyle = css(color);
+  ctx.lineWidth = T;
+  pathRR(R.x + T * 0.5, R.y + T * 0.5, R.w - T, R.h - T, Math.max(rad - T * 0.5, 0.5));
+  ctx.stroke();
+}
+function disc(R, color) {
+  if (color.a <= 0) return;
+  ctx.fillStyle = css(color);
+  ctx.beginPath();
+  ctx.ellipse(R.x + R.w * 0.5, R.y + R.h * 0.5, Math.max(0.01, R.w * 0.5), Math.max(0.01, R.h * 0.5), 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+const rect = (x, y, w, h) => ({ x: x, y: y, w: w, h: h });
+const inset = (R, d) => rect(R.x + d, R.y + d, R.w - d * 2, R.h - d * 2);
+
+const ALIGN_LEFT = 0, ALIGN_CENTER = 1, ALIGN_RIGHT = 2;
+function label(R, text, size, align, color) {
+  if (R.w <= 0) return;
+  ctx.font = size + 'px "PeekggFace"';
+  ctx.fillStyle = css(color);
+  ctx.textBaseline = "middle";
+  ctx.textAlign = align === ALIGN_LEFT ? "left" : align === ALIGN_CENTER ? "center" : "right";
+  const x = align === ALIGN_LEFT ? R.x : align === ALIGN_CENTER ? R.x + R.w * 0.5 : R.x + R.w;
+  let out = text;
+  if (ctx.measureText(out).width > R.w && out.length > 1) {
+    while (out.length > 1 && ctx.measureText(out + "…").width > R.w) out = out.slice(0, -1);
+    out += "…";
+  }
+  ctx.fillText(out, x, R.y + R.h * 0.5);
+}
+function iconLabel(R, ch, size, align, color) {
+  ctx.font = size + 'px "PeekggIcons"';
+  ctx.fillStyle = css(color);
+  ctx.textBaseline = "middle";
+  ctx.textAlign = align === ALIGN_LEFT ? "left" : align === ALIGN_CENTER ? "center" : "right";
+  const x = align === ALIGN_LEFT ? R.x : align === ALIGN_CENTER ? R.x + R.w * 0.5 : R.x + R.w;
+  ctx.fillText(ch, x, R.y + R.h * 0.5);
+}
+const ICON_STAR = "\uF005", ICON_USER = "\uF007", ICON_GEAR = "\uF013";
+const ICON_SEARCH = "\uF002", ICON_XMARK = "\uF00D", ICON_CHEV_DOWN = "\uF078", ICON_CHEV_UP = "\uF077";
+
+const anims = new Map();
+let dt = 1 / 60;
+function animTo(id, target, speed) {
+  const e = anims.get(id);
+  if (!e) { anims.set(id, { v: target }); return target; }
+  const K = 1 - Math.exp(-speed * dt);
+  e.v += (target - e.v) * K;
+  if (Math.abs(target - e.v) < 0.0005) e.v = target;
+  return e.v;
+}
+
+const TOGGLE = 0, SLIDER = 1, LABEL = 2, DROPDOWN = 3, STEP = 4, COLOR = 5, PICK = 6, KEY = 7, RATIO = 8;
+
+const gradientRows = [
+  { t: TOGGLE, l: "Ники", k: "BcNameplateGradient" },
+  { t: DROPDOWN, l: "Режим", k: "BcNameplateGradientMode", min: 0, max: 2, opt: ["Skin Colors", "Custom", "Rainbow"] },
+  { t: TOGGLE, l: "Клан", k: "BcNameplateGradientClan" },
+  { t: TOGGLE, l: "Всё подряд", k: "BcNameplateGradientEverything" },
+  { t: SLIDER, l: "Скорость", k: "BcNameplateGradientAnimateSpeed", min: 1, max: 100 },
+];
+const freezeRows = [
+  { t: TOGGLE, l: "Включить", k: "BcFreezePull" },
+  { t: TOGGLE, l: "Щит", k: "BcFreezePullShield" },
+  { t: SLIDER, l: "Дальность", k: "BcFreezePullRange", min: 60, max: 260 },
+  { t: SLIDER, l: "Количество", k: "BcFreezePullStrands", min: 1, max: 8 },
+  { t: SLIDER, l: "Мороз", k: "BcFreezePullSparks", min: 0, max: 300 },
+  { t: TOGGLE, l: "Цвет как у хука", k: "BcFreezePullHookColor" },
+  { t: COLOR, l: "Холодный цвет", k: "BcFreezePullColor" },
+];
+const hookRows = [
+  { t: DROPDOWN, l: "Хук", k: "BcHookStyle", min: 0, max: 8, opt: ["None", "Whirlwind", "Black Hole", "Magic", "Fire", "Troll", "Rainbow", "Lightning", "Tentacle"] },
+  { t: TOGGLE, l: "Стилизовать хук", k: "BcHookTip" },
+  { t: SLIDER, l: "Время роста", k: "BcHookChargeTime", min: 200, max: 4000 },
+  { t: SLIDER, l: "Размер", k: "BcHookSize", min: 50, max: 200 },
+];
+const glowRows = [
+  { t: TOGGLE, l: "Свечение лазера", k: "BcLaserGlow" },
+  { t: SLIDER, l: "Сила лазера", k: "BcLaserGlowPower", min: 0, max: 100, sfx: "%" },
+  { t: TOGGLE, l: "Свечение дробовика", k: "BcShotgunGlow" },
+  { t: SLIDER, l: "Сила дробовика", k: "BcShotgunGlowPower", min: 0, max: 100, sfx: "%" },
+];
+const fxRows = [
+  { t: TOGGLE, l: "Jelly tee", k: "BcJellyTee" },
+  { t: TOGGLE, l: "Jelly у других", k: "BcJellyTeeOthers" },
+  { t: SLIDER, l: "Сила Jelly", k: "BcJellyTeeStrength", min: 1, max: 500 },
+  { t: TOGGLE, l: "Gores режим", k: "BcGoresMode" },
+];
+const particleRows = [
+  { t: TOGGLE, l: "3D частицы", k: "Bc3dParticles" },
+  { t: SLIDER, l: "Плотность", k: "Bc3dParticlesDensity", min: 1, max: 600 },
+  { t: SLIDER, l: "Размер", k: "Bc3dParticlesSizeMax", min: 2, max: 200 },
+  { t: TOGGLE, l: "Свечение частиц", k: "Bc3dParticlesGlow" },
+];
+const cameraRows = [
+  { t: TOGGLE, l: "Кинематогр. камера", k: "BcCinematicCamera" },
+  { t: SLIDER, l: "Сила камеры", k: "BcCinematicCameraStrength", min: 0, max: 100, sfx: "%" },
+  { t: TOGGLE, l: "Dynamic FOV", k: "BcDynamicFov" },
+  { t: TOGGLE, l: "Лучший спектатор", k: "BcBetterSpectate" },
+  { t: TOGGLE, l: "Уведомление moved", k: "BcSpecMovedNotify" },
+];
+const cursorRows = [
+  { t: TOGGLE, l: "Трейл курсора", k: "BcCursorTrail" },
+  { t: SLIDER, l: "Размер трейла", k: "BcCursorTrailTrailSize", min: 10, max: 100 },
+  { t: SLIDER, l: "Прозрачность", k: "BcCursorTrailOpacity", min: 0, max: 100, sfx: "%" },
+];
+const weatherRows = [
+  { t: TOGGLE, l: "Включить погоду", k: "BcAtmosphere" },
+  { t: DROPDOWN, l: "Тип", k: "BcWeather", min: 0, max: 3, opt: ["Снег", "Дождь", "Светлячки", "Пыль"] },
+  { t: SLIDER, l: "Количество", k: "BcWeatherAmount", min: 25, max: 300 },
+  { t: SLIDER, l: "Размер капель", k: "BcWeatherRainSize", min: 25, max: 300 },
+  { t: SLIDER, l: "Скорость", k: "BcWeatherRainSpeed", min: 25, max: 300 },
+];
+const aspectRows = [
+  { t: DROPDOWN, l: "Режим", k: "BcCustomAspectRatioMode", min: 0, max: 2, opt: ["Выкл", "Пресет", "Свой"] },
+  { t: RATIO, l: "Пресет", k: "BcCustomAspectRatio", showK: "BcCustomAspectRatioMode", showV: 1 },
+  { t: STEP, l: "Ширина", k: "BcCustomAspectRatioNum", min: 1, max: 100, showK: "BcCustomAspectRatioMode", showV: 2 },
+  { t: STEP, l: "Высота", k: "BcCustomAspectRatioDen", min: 1, max: 100, showK: "BcCustomAspectRatioMode", showV: 2 },
+];
+const worldRows = [
+  { t: SLIDER, l: "Показ других", k: "ClShowOthers", min: 0, max: 2 },
+  { t: SLIDER, l: "Прозрачность других", k: "ClShowOthersAlpha", min: 0, max: 100, sfx: "%" },
+  { t: SLIDER, l: "Прозрачность тайлов", k: "ClOverlayEntities", min: 0, max: 100, sfx: "%" },
+  { t: TOGGLE, l: "Фриз-бары", k: "ClShowFreezeBars" },
+  { t: SLIDER, l: "Затемнение фриза", k: "BcFrozenSkinDarken", min: 0, max: 70 },
+  { t: SLIDER, l: "Хук-коллизия своя", k: "ClShowHookCollOwn", min: 0, max: 2 },
+  { t: SLIDER, l: "Хук-коллизия чужая", k: "ClShowHookCollOther", min: 0, max: 2 },
+  { t: TOGGLE, l: "Индикатор дамми", k: "BcShowhudDummyCoordIndicator" },
+];
+const auraRows = [
+  { t: TOGGLE, l: "Включить ауру", k: "ClPeekggAura" },
+  { t: SLIDER, l: "Размер", k: "ClPeekggAuraRadius", min: 100, max: 300, sfx: "%" },
+  { t: SLIDER, l: "Прозрачность", k: "ClPeekggAuraAlpha", min: 0, max: 100, sfx: "%" },
+  { t: COLOR, l: "Цвет", k: "ClPeekggAuraColorC" },
+  { t: TOGGLE, l: "Перелив ауры", k: "ClPeekggAuraRainbow" },
+];
+const outlineRows = [
+  { t: TOGGLE, l: "Обводка ти", k: "ClPeekggOutline" },
+  { t: COLOR, l: "Цвет обводки", k: "ClPeekggOutlineColorC" },
+  { t: TOGGLE, l: "Перелив обводки", k: "ClPeekggOutlineRainbow" },
+];
+const jumpRows = [
+  { t: TOGGLE, l: "Кольцо прыжка", k: "ClPeekggJumpRing" },
+  { t: COLOR, l: "Цвет кольца", k: "ClPeekggRingColorC" },
+  { t: TOGGLE, l: "Перелив кольца", k: "ClPeekggRingRainbow" },
+];
+const keyPageRows = [{ t: KEY, l: "Открыть меню" }];
+const settingsRows = [
+  { t: SLIDER, l: "Прозрачность фона", k: "ClPeekggOpacity", min: 0, max: 100, sfx: "%" },
+  { t: SLIDER, l: "Масштаб меню", k: "ClPeekggScale", min: 70, max: 130, sfx: "%" },
+  { t: TOGGLE, l: "Показывать FPS", k: "ClShowfps" },
+  { t: TOGGLE, l: "Анимации UI", k: "BcAnimations" },
+  { t: TOGGLE, l: "Подтверждение выхода", k: "BcConfirmQuit" },
+  { t: SLIDER, l: "Масштаб колеса", k: "BcWheelScale", min: 50, max: 100, sfx: "%" },
+];
+const soundRows = [
+  { t: TOGGLE, l: "Тихие хуки чужих", k: "BcMuteOthersHook" },
+  { t: TOGGLE, l: "Тихий хаммер чужих", k: "BcMuteOthersHammer" },
+  { t: TOGGLE, l: "Тихий двойной прыжок", k: "BcMuteOthersAirJump" },
+];
+const accessoryRows = [
+  { t: PICK, l: "Нет", k: "ClPeekggAccessory", idx: 0 },
+  { t: PICK, l: "Китайская шляпка", k: "ClPeekggAccessory", idx: 1 },
+  { t: PICK, l: "Крылья ангела", k: "ClPeekggAccessory", idx: 2 },
+  { t: PICK, l: "Крылья демона", k: "ClPeekggAccessory", idx: 3 },
+  { t: COLOR, l: "Цвет шляпки", k: "ClPeekggHatColorC" },
+  { t: TOGGLE, l: "Перелив шляпы", k: "ClPeekggHatRainbow" },
+];
+
+const pages = [
+  {
+    title: "ВИЗУАЛ", cards: [
+      { title: "ГРАДИЕНТ", color: C(0.72, 0.60, 1.00), rows: gradientRows },
+      { title: "FREEZE LIFESTEAL", color: C(0.55, 0.85, 1.00), rows: freezeRows },
+      { title: "CUSTOM HOOKS", color: C(0.80, 0.55, 1.00), rows: hookRows },
+      { title: "ASPECT RATIO", color: C(0.45, 0.75, 1.00), rows: aspectRows },
+      { title: "WEAPON GLOW", color: C(1.00, 0.55, 0.45), rows: glowRows },
+      { title: "МИР", color: C(1.00, 0.50, 0.66), rows: worldRows },
+      { title: "ЭФФЕКТЫ", color: C(1.00, 0.42, 0.42), rows: fxRows },
+      { title: "ЧАСТИЦЫ", color: C(0.55, 0.85, 1.00), rows: particleRows },
+      { title: "КАМЕРА", color: C(0.75, 0.55, 1.00), rows: cameraRows },
+      { title: "КУРСОР", color: C(0.60, 0.95, 0.70), rows: cursorRows },
+      { title: "АУРА ЦЕЛИ", color: C(1.00, 0.55, 0.20), rows: auraRows },
+      { title: "ОБВОДКА", color: C(0.55, 0.95, 0.55), rows: outlineRows },
+      { title: "ПРЫЖОК", color: C(0.45, 0.85, 1.00), rows: jumpRows },
+      { title: "ПОГОДА", color: C(0.55, 0.80, 1.00), rows: weatherRows },
+    ],
+  },
+  { title: "АКСЕССУАРЫ", cards: [{ title: "АКСЕССУАРЫ", color: C(1.00, 0.78, 0.40), rows: accessoryRows }] },
+  {
+    title: "НАСТРОЙКИ", cards: [
+      { title: "УПРАВЛЕНИЕ", color: C(0.62, 0.48, 1.00), rows: keyPageRows },
+      { title: "ИНТЕРФЕЙС", color: C(0.40, 0.70, 1.00), rows: settingsRows },
+      { title: "ЗВУКИ", color: C(1.00, 0.70, 0.35), rows: soundRows },
+    ],
+  },
+];
+
+const st = {
+  page: 0, scroll: [0, 0, 0], pageAnim: 1,
+  openAnim: 0, closing: false, active: true,
+  collapsed: [[], [], []],
+  awaitingKey: false, activeSlider: null, openDropdown: null,
+  dropdownRect: null, dropdownRow: null, openColor: null, colorRect: null, colorDrag: 0,
+  search: "", searchFocus: false, hue: 0, sat: 0, val: 1, alpha: 1,
+  lastOpenTime: -10, contentH: 0, cardsInit: false,
+};
+for (let p = 0; p < 3; p++) for (let c = 0; c < 32; c++) st.collapsed[p][c] = true;
+
+const mouse = { x: -1000, y: -1000, down: false, pressed: false, released: false };
+const clickState = new Map();
+const inside = (R) => mouse.x >= R.x && mouse.x <= R.x + R.w && mouse.y >= R.y && mouse.y <= R.y + R.h;
+const hover = inside;
+function doClick(id, R) {
+  if (mouse.pressed && inside(R)) clickState.set(id, true);
+  if (mouse.released) {
+    const was = clickState.get(id) === true;
+    clickState.delete(id);
+    return was && inside(R);
+  }
+  return false;
+}
+
+let S = 1;
+let ScalePx = 1;
+let screenR = rect(0, 0, 1600, 600);
+
+const sceneCv = document.createElement("canvas");
+const blurCv = document.createElement("canvas");
+let dpr = 1;
+function buildScene(W, H) {
+  sceneCv.width = W; sceneCv.height = H;
+  blurCv.width = Math.max(1, Math.round(W / 2)); blurCv.height = Math.max(1, Math.round(H / 2));
+  const s = sceneCv.getContext("2d", { alpha: false });
+  const g = s.createLinearGradient(0, 0, 0, H);
+  g.addColorStop(0, "#0a0e18"); g.addColorStop(0.55, "#0c1018"); g.addColorStop(1, "#070a10");
+  s.fillStyle = g; s.fillRect(0, 0, W, H);
+  const blobs = [
+    ["#2c4fd8", 0.15, 0.22, 0.42], ["#c2532f", 0.72, 0.18, 0.30],
+    ["#1f9e7a", 0.58, 0.72, 0.40], ["#8b3fd8", 0.26, 0.80, 0.34],
+    ["#d8b23f", 0.86, 0.55, 0.24], ["#1a6fd8", 0.45, 0.45, 0.30],
+  ];
+  for (const b of blobs) {
+    const rad = b[3] * Math.min(W, H) * 0.9;
+    const rg = s.createRadialGradient(b[1] * W, b[2] * H, 0, b[1] * W, b[2] * H, rad);
+    rg.addColorStop(0, b[0]); rg.addColorStop(1, "rgba(0,0,0,0)");
+    s.globalAlpha = 0.55; s.fillStyle = rg; s.fillRect(0, 0, W, H);
+  }
+  s.globalAlpha = 1;
+  for (let i = 0; i < 7; i++) {
+    const bx = (0.02 + i * 0.14) * W, by = (0.26 + (i % 3) * 0.16) * H;
+    s.fillStyle = "rgba(150,190,255,0.035)";
+    s.fillRect(bx, by, W * 0.12, H * 0.03);
+    s.fillStyle = "rgba(0,0,0,0.10)";
+    s.fillRect(bx, by + H * 0.03, W * 0.12, H * 0.004);
+  }
+  s.fillStyle = "rgba(120,190,255,0.07)";
+  s.fillRect(0, H * 0.88, W, H * 0.015);
+  const b2 = blurCv.getContext("2d");
+  b2.filter = "blur(" + Math.max(2, Math.round(10 * (W / 1600))) + "px)";
+  b2.drawImage(sceneCv, 0, 0, blurCv.width, blurCv.height);
+  b2.filter = "none";
+}
+
+function drawGlass(R, radius) {
+  ctx.save();
+  pathRR(R.x, R.y, R.w, R.h, radius);
+  ctx.clip();
+  ctx.drawImage(blurCv, 0, 0, screenR.w, screenR.h);
+  ctx.fillStyle = css(C(0.035, 0.04, 0.055, 0.72));
+  ctx.fillRect(R.x, R.y, R.w, R.h);
+  ctx.restore();
+  outlineRR(R, radius, 1.0, C(1, 1, 1, 0.10));
+}
+
+
+function DoToggle(key, Row) {
+  const Pill = rect(Row.x + Row.w - 24 * S - 8 * S, Row.y + (Row.h - 11.5 * S) / 2, 24 * S, 11.5 * S);
+  if (doClick("tg:" + key, Pill)) cfg[key] = cfg[key] !== 0 ? 0 : 1;
+  const On = cfg[key] !== 0;
+  const T = animTo("tg:" + key, On ? 1 : 0, 12);
+  const TE = T * T * (3 - 2 * T);
+  const A = ColAccent();
+  if (TE > 0.01) {
+    const D1 = 2.5 * S, D2 = 5.5 * S;
+    outlineRR(rect(Pill.x - D2, Pill.y - D2, Pill.w + D2 * 2, Pill.h + D2 * 2), Pill.h * 0.5 + D2, D2, withA(A, 0.05 * TE));
+    outlineRR(rect(Pill.x - D1, Pill.y - D1, Pill.w + D1 * 2, Pill.h + D1 * 2), Pill.h * 0.5 + D1, D1, withA(A, 0.09 * TE));
+  }
+  fillRR(Pill, Pill.h * 0.5, mixc(C(1, 1, 1, 0.16), withA(A, 0.92), TE));
+  const KnobSize = Pill.h - 4.5 * S;
+  const Knob = rect(Pill.x + 1.75 * S + TE * (Pill.w - KnobSize - 3.5 * S), Pill.y + (Pill.h - KnobSize) / 2, KnobSize, KnobSize);
+  disc(rect(Knob.x, Knob.y + 1 * S, Knob.w, Knob.h), C(0, 0, 0, 0.28));
+  disc(Knob, C(1, 1, 1, 0.80 + 0.18 * TE));
+}
+
+function DoSlider(row, Row) {
+  const key = row.k;
+  const ValueWidth = 32 * S, TrackWidth = 66 * S;
+  const Track = rect(Row.x + Row.w - 8 * S - ValueWidth - TrackWidth, Row.y + (Row.h - 3 * S) / 2, TrackWidth, 3 * S);
+  const Hit = rect(Track.x, Track.y - 8 * S, Track.w, Track.h + 16 * S);
+  const InHit = inside(Hit);
+  if (mouse.down) {
+    if (st.activeSlider === null && InHit) st.activeSlider = "sl:" + key;
+    if (st.activeSlider === "sl:" + key) {
+      const ratio = Math.max(0, Math.min(1, (mouse.x - Track.x) / Track.w));
+      const nv = row.min + Math.round(ratio * (row.max - row.min));
+      if (nv !== cfg[key]) cfg[key] = nv;
+    }
+  } else if (st.activeSlider === "sl:" + key) {
+    st.activeSlider = null;
+  }
+  const TargetRatio = row.max > row.min ? Math.max(0, Math.min(1, (cfg[key] - row.min) / (row.max - row.min))) : 0;
+  const Ratio = animTo("sl:" + key, TargetRatio, 26);
+  const Hot = InHit || st.activeSlider === "sl:" + key;
+  const A = ColAccent();
+  fillRR(Track, Track.h * 0.5, withA(A, 0.35));
+  if (Ratio > 0) {
+    const Fill = rect(Track.x, Track.y, Track.w * Ratio, Track.h);
+    outlineRR(Fill, Fill.h * 0.5, 3 * S, withA(A, Hot ? 0.22 : 0.14));
+    fillRR(Fill, Fill.h * 0.5, withA(A, 0.95));
+  }
+  const DotSize = 9 * S;
+  const Dot = rect(Track.x + Track.w * Ratio - DotSize * 0.5, Track.y + Track.h * 0.5 - DotSize * 0.5, DotSize, DotSize);
+  const DotHalo = rect(Dot.x - 1.4 * S, Dot.y - 1.4 * S, Dot.w + 2.8 * S, Dot.h + 2.8 * S);
+  if (Hot) disc(rect(DotHalo.x - 2.5 * S, DotHalo.y - 2.5 * S, DotHalo.w + 5 * S, DotHalo.h + 5 * S), withA(A, 0.18));
+  disc(DotHalo, C(0.02, 0.02, 0.03, 0.55));
+  disc(Dot, withA(A, 1.0));
+  const ValueRect = rect(Track.x + Track.w + 5 * S, Row.y, ValueWidth - 5 * S, Row.h);
+  label(ValueRect, String(cfg[key]) + (row.sfx || ""), 6.5 * S, ALIGN_RIGHT, Hot ? ColText() : ColMuted());
+}
+
+const RATIOS = [{ l: "4:3", v: 133 }, { l: "5:4", v: 125 }, { l: "3:2", v: 150 }, { l: "16:10", v: 160 }, { l: "16:9", v: 178 }, { l: "21:9", v: 233 }];
+
+function DoDropdown(row, Row) {
+  const key = row.k;
+  const Control = rect(Row.x + Row.w - 118 * S - 6 * S, Row.y + (Row.h - 16 * S) / 2, 118 * S, 16 * S);
+  const open = st.openDropdown === "dd:" + key;
+  const Hov = hover(Control);
+  outlineRR(Control, 5 * S, 1 * S, C(1, 1, 1, Hov || open ? 0.45 : 0.24));
+  const cur = cfg[key];
+  const textVal = cur >= 0 && cur < row.opt.length ? row.opt[cur] : "";
+  label(rect(Control.x + 6 * S, Control.y, Control.w - 18 * S, Control.h), textVal, 6 * S, ALIGN_LEFT, ColText());
+  label(rect(Control.x + Control.w - 12 * S, Control.y, 9 * S, Control.h), open ? "^" : "v", 5.5 * S, ALIGN_CENTER, ColDim());
+  if (doClick("dd:" + key, Control)) {
+    if (open) st.openDropdown = null;
+    else {
+      st.openDropdown = "dd:" + key;
+      st.dropdownRect = Control;
+      st.dropdownRow = row;
+    }
+  }
+}
+
+function DoRatio(row, Row) {
+  let idx = 0, best = 1e9;
+  for (let i = 0; i < RATIOS.length; i++) {
+    const d = Math.abs(cfg[row.k] - RATIOS[i].v);
+    if (d < best) { best = d; idx = i; }
+  }
+  const Control = rect(Row.x + Row.w - 118 * S - 6 * S, Row.y + (Row.h - 16 * S) / 2, 118 * S, 16 * S);
+  const open = st.openDropdown === "rt";
+  const Hov = hover(Control);
+  outlineRR(Control, 5 * S, 1 * S, C(1, 1, 1, Hov || open ? 0.45 : 0.24));
+  label(rect(Control.x + 6 * S, Control.y, Control.w - 18 * S, Control.h), RATIOS[idx].l, 6 * S, ALIGN_LEFT, ColText());
+  label(rect(Control.x + Control.w - 12 * S, Control.y, 9 * S, Control.h), open ? "^" : "v", 5.5 * S, ALIGN_CENTER, ColDim());
+  if (doClick("rt", Control)) {
+    if (open) st.openDropdown = null;
+    else {
+      st.openDropdown = "rt";
+      st.dropdownRect = Control;
+      st.dropdownRow = { k: "__ratio", opt: RATIOS.map((r) => r.l) };
+    }
+  }
+}
+
+function drawDropdownList(Panel) {
+  if (!st.openDropdown || !st.dropdownRow) return;
+  const row = st.dropdownRow;
+  const ItemH = 16 * S;
+  const Count = row.opt.length;
+  const List = rect(st.dropdownRect.x, st.dropdownRect.y, st.dropdownRect.w, ItemH * Count + 2 * S);
+  List.y = st.dropdownRect.y + st.dropdownRect.h + 2 * S;
+  if (List.y + List.h > Panel.y + Panel.h - 4 * S) List.y = st.dropdownRect.y - List.h - 2 * S;
+  List.y = Math.max(Panel.y + 4 * S, Math.min(List.y, Panel.y + Panel.h - List.h - 4 * S));
+  outlineRR(List, 6 * S, 1 * S, C(1, 1, 1, 0.25));
+  const ListInner = inset(List, 1 * S);
+  fillRR(ListInner, 5 * S, C(0.02, 0.024, 0.033, 0.99));
+  const curValue = row.k === "__ratio" ? RATIOS.findIndex((r) => Math.abs(cfg.BcCustomAspectRatio - r.v) === Math.min.apply(null, RATIOS.map((x) => Math.abs(cfg.BcCustomAspectRatio - x.v)))) : cfg[row.k];
+  for (let i = 0; i < Count; i++) {
+    const Item = rect(ListInner.x, ListInner.y + i * ItemH, ListInner.w, ItemH);
+    if (i === curValue) fillRR(Item, 4 * S, withA(ColAccent(), 0.30));
+    else if (hover(Item)) fillRR(Item, 4 * S, ColHover());
+    label(rect(Item.x + 6 * S, Item.y, Item.w - 8 * S, Item.h), row.opt[i], 6 * S, ALIGN_LEFT, i === curValue ? ColText() : ColMuted());
+    if (doClick("ddi:" + row.k + ":" + i, Item)) {
+      if (row.k === "__ratio") cfg.BcCustomAspectRatio = RATIOS[i].v;
+      else cfg[row.k] = i;
+      st.openDropdown = null;
+    }
+  }
+}
+
+function DoStepper(row, Row) {
+  const key = row.k;
+  const Control = rect(Row.x + Row.w - 104 * S - 6 * S, Row.y + (Row.h - 16 * S) / 2, 104 * S, 16 * S);
+  const Minus = rect(Control.x, Control.y, 22 * S, Control.h);
+  const Plus = rect(Control.x + Control.w - 22 * S, Control.y, 22 * S, Control.h);
+  label(rect(Minus.x + Minus.w, Control.y, Control.w - 44 * S, Control.h), String(cfg[key]), 6.5 * S, ALIGN_CENTER, ColText());
+  label(Minus, "-", 9 * S, ALIGN_CENTER, ColText());
+  label(Plus, "+", 9 * S, ALIGN_CENTER, ColText());
+  if (doClick("stm:" + key, Minus) && cfg[key] > row.min) cfg[key] -= 1;
+  if (doClick("stp:" + key, Plus) && cfg[key] < row.max) cfg[key] += 1;
+}
+
+function DoColor(row, Row) {
+  const key = row.k;
+  const Swatch = rect(Row.x + Row.w - 30 * S - 8 * S, Row.y + (Row.h - 12 * S) / 2, 30 * S, 12 * S);
+  fillRR(Swatch, 6 * S, C(1, 1, 1, 0.30));
+  fillRR(inset(Swatch, 1 * S), 5 * S, packedColor(cfg[key]));
+  if (doClick("cl:" + key, Swatch)) {
+    if (st.openColor === key) st.openColor = null;
+    else {
+      const cur = packedColor(cfg[key]);
+      rgbToHsv(cur);
+      st.alpha = Math.max(0, Math.min(1, cur.a));
+      st.openColor = key;
+      st.colorRect = Swatch;
+    }
+  }
+}
+
+function rgbToHsv(c) {
+  const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b), d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === c.r) h = ((c.g - c.b) / d) % 6;
+    else if (max === c.g) h = (c.b - c.r) / d + 2;
+    else h = (c.r - c.g) / d + 4;
+    h /= 6;
+    if (h < 0) h += 1;
+  }
+  st.hue = h; st.sat = max === 0 ? 0 : d / max; st.val = max;
+}
+function hsvToRgb(h, s, v, a) {
+  const f = (n) => {
+    const k = (n + h * 6) % 6;
+    return v - v * s * Math.max(0, Math.min(k, Math.min(4 - k, 1)));
+  };
+  return C(f(5), f(3), f(1), a);
+}
+
+function DoPick(row, Row) {
+  const On = cfg[row.k] === row.idx;
+  const Dot = rect(Row.x + 7 * S, Row.y + (Row.h - 7 * S) / 2, 7 * S, 7 * S);
+  disc(Dot, On ? ColAccent() : C(1, 1, 1, 0.22));
+  const tx = Dot.x + Dot.w + 7 * S;
+  label(rect(tx, Row.y, Row.w - (tx - Row.x) - 7 * S, Row.h), row.l, 6.5 * S, ALIGN_LEFT, On ? ColText() : ColMuted());
+  if (doClick("pk:" + row.l, Row)) cfg[row.k] = row.idx;
+}
+
+function DoKeyRow(row, Row) {
+  label(rect(Row.x, Row.y, Row.w - 96 * S, Row.h), row.l, 7 * S, ALIGN_LEFT, ColMuted());
+  const KeyButton = rect(Row.x + Row.w - 92 * S, Row.y + (Row.h - 17 * S) / 2, 92 * S, 17 * S);
+  const Hot = hover(KeyButton);
+  outlineRR(KeyButton, 5 * S, 1 * S, C(1, 1, 1, Hot ? 0.40 : 0.20));
+  label(KeyButton, st.awaitingKey ? "..." : String(cfg.ClPeekggKey).toUpperCase(), 6.5 * S, ALIGN_CENTER, st.awaitingKey ? ColAccent() : ColText());
+  if (doClick("keyrow", KeyButton)) st.awaitingKey = true;
+}
+
+
+const rowHeight = (t) => (t === TOGGLE ? 19 * S : t === LABEL ? 12 * S : t === SLIDER ? 20 * S : 21 * S);
+
+function renderCards(Area, Panel) {
+  const Gap = 11 * S;
+  const Columns = Area.w >= 596 * S ? 3 : 2;
+  const CardWidth = (Area.w - Gap * (Columns - 1)) / Columns;
+  const columnY = [0, 0, 0];
+  const cards = pages[st.page].cards;
+  const query = st.search.trim().toLowerCase();
+  const HasQuery = query.length > 0;
+  const scroll = st.scroll[st.page];
+
+  for (let c = 0; c < cards.length; c++) {
+    const Card = cards[c];
+    const TitleMatches = !HasQuery || Card.title.toLowerCase().indexOf(query) >= 0;
+    const rowVisible = [];
+    let visRows = 0, RowsHeight = 0;
+    for (let r = 0; r < Card.rows.length; r++) {
+      const row = Card.rows[r];
+      const showIf = row.showK === undefined || cfg[row.showK] === row.showV;
+      const vis = showIf && (TitleMatches || !HasQuery || row.l.toLowerCase().indexOf(query) >= 0);
+      rowVisible[r] = vis;
+      if (!vis) continue;
+      visRows++;
+      RowsHeight += rowHeight(row.t);
+    }
+    if (visRows === 0 && !TitleMatches) continue;
+
+    const Collapsed = !HasQuery && st.collapsed[st.page][c];
+    const CardAnim = animTo("card:" + st.page + ":" + c, Collapsed ? 0 : 1, 9);
+    const CardEase = 1 - (1 - CardAnim) * (1 - CardAnim);
+    const CardHeight = 8 * S + 14 * S + RowsHeight * CardEase + 7 * S;
+
+    let col = 0;
+    for (let i = 1; i < Columns; i++) if (columnY[i] < columnY[col]) col = i;
+
+    const Outer = rect(Area.x + col * (CardWidth + Gap), Area.y + columnY[col] - scroll, CardWidth, CardHeight);
+    columnY[col] += CardHeight + Gap;
+    if (Outer.y + Outer.h < Area.y - 4 * S || Outer.y > Area.y + Area.h + 4 * S) continue;
+
+    outlineRR(Outer, 12 * S, 1 * S, C(1, 1, 1, 0.22));
+    const Inner = inset(Outer, 1 * S);
+
+    const Dot = rect(Inner.x + 9 * S, Inner.y + 9 * S, 6 * S, 6 * S);
+    const DotGlow = rect(Dot.x - 2 * S, Dot.y - 2 * S, Dot.w + 4 * S, Dot.h + 4 * S);
+    fillRR(DotGlow, DotGlow.h * 0.5, withA(Card.color, 0.25));
+    disc(Dot, Card.color);
+
+    const titleX = Dot.x + Dot.w + 6 * S;
+    label(rect(titleX, Inner.y + 6.5 * S, Inner.w - (titleX - Inner.x) - 8 * S, 10 * S), Card.title, 6.5 * S, ALIGN_LEFT, withA(ColText(), 0.94));
+
+    const CardHeader = rect(Inner.x, Inner.y, Inner.w, 22 * S);
+    const HeaderHover = hover(CardHeader);
+    if (doClick("hdr:" + st.page + ":" + c, CardHeader)) st.collapsed[st.page][c] = !st.collapsed[st.page][c];
+    iconLabel(rect(CardHeader.x + CardHeader.w - 14 * S - 4 * S, CardHeader.y, 14 * S, CardHeader.h), Collapsed ? ICON_CHEV_DOWN : ICON_CHEV_UP, 6.5 * S, ALIGN_CENTER, HeaderHover ? ColText() : ColMuted());
+
+    let RowY = Inner.y + 8 * S + 14 * S;
+    if (CardEase <= 0.01) continue;
+
+    ctx.save();
+    pathRR(Outer.x, Outer.y, Outer.w, Outer.h, 12 * S);
+    ctx.clip();
+    for (let r = 0; r < Card.rows.length; r++) {
+      if (!rowVisible[r]) continue;
+      const row = Card.rows[r];
+      const RowHeight = rowHeight(row.t);
+      const RowRect = rect(Inner.x + 9 * S, RowY + 1 * S, Inner.w - 18 * S, RowHeight - 2 * S);
+      const RowOn = row.t === TOGGLE && cfg[row.k] !== 0;
+      const Pill = rect(RowRect.x - 5 * S, RowRect.y, RowRect.w + 10 * S, RowRect.h);
+      const PillRadius = Pill.h * 0.5;
+      const OnAnim = animTo("row:" + st.page + ":" + c + ":" + r, RowOn ? 1 : 0, 11);
+      const OnEase = 1 - (1 - OnAnim) * (1 - OnAnim);
+      const A = ColAccent();
+      if (OnEase > 0.01) {
+        const dist = [3, 6.5, 10.5], alpha = [0.10, 0.06, 0.03];
+        for (let g = 0; g < 3; g++) {
+          const D = dist[g] * S;
+          outlineRR(rect(Pill.x - D, Pill.y - D, Pill.w + D * 2, Pill.h + D * 2), PillRadius + D, D, withA(A, alpha[g] * OnEase));
+        }
+      }
+      outlineRR(Pill, PillRadius, 1.1 * S, mixc(C(1, 1, 1, 0.10), withA(A, 0.62), OnEase));
+
+      switch (row.t) {
+        case KEY:
+          DoKeyRow(row, RowRect); break;
+        case LABEL:
+          label(RowRect, row.l, 6 * S, ALIGN_LEFT, ColDim()); break;
+        case TOGGLE:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 36 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, RowOn ? ColText() : ColMuted());
+          DoToggle(row.k, RowRect); break;
+        case SLIDER:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 112 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, RowOn ? ColText() : ColMuted());
+          DoSlider(row, RowRect); break;
+        case DROPDOWN:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 124 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, ColMuted());
+          DoDropdown(row, RowRect); break;
+        case STEP:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 102 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, ColMuted());
+          DoStepper(row, RowRect); break;
+        case COLOR:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 44 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, ColMuted());
+          DoColor(row, RowRect); break;
+        case PICK:
+          DoPick(row, RowRect); break;
+        case RATIO:
+          label(rect(RowRect.x, RowRect.y, RowRect.w - 124 * S, RowRect.h), row.l, 7 * S, ALIGN_LEFT, ColMuted());
+          DoRatio(row, RowRect); break;
+      }
+      RowY += RowHeight;
+    }
+    ctx.restore();
+  }
+
+  st.contentH = Math.max(0, Math.max(columnY[0], Math.max(columnY[1], columnY[2])) - Gap);
+  if (st.contentH > Area.h) {
+    const MaxScroll = st.contentH - Area.h;
+    st.scroll[st.page] = Math.max(0, Math.min(st.scroll[st.page], MaxScroll));
+    const ScrollBar = rect(Area.x + Area.w + 3 * S, Area.y, 2.5 * S, Area.h);
+    fillRR(ScrollBar, 1.25 * S, C(1, 1, 1, 0.07));
+    const ThumbH = Math.max(20 * S, Area.h * (Area.h / st.contentH));
+    const ThumbY = Area.y + (Area.h - ThumbH) * (st.scroll[st.page] / MaxScroll);
+    fillRR(rect(ScrollBar.x, ThumbY, ScrollBar.w, ThumbH), 1.25 * S, C(1, 1, 1, 0.25));
+  } else {
+    st.scroll[st.page] = 0;
+  }
+}
+
+
+function renderSidebar(Rail) {
+  const icons = [ICON_STAR, ICON_USER, ICON_GEAR];
+  const ItemSize = 32 * S, Spacing = 10 * S;
+  for (let i = 0; i < 3; i++) {
+    const Item = rect(Rail.x + (Rail.w - ItemSize) * 0.5, i === 2 ? Rail.y + Rail.h - ItemSize - 14 * S : Rail.y + 14 * S + i * (ItemSize + Spacing), ItemSize, ItemSize);
+    const Hov = hover(Item);
+    const IconRadius = Item.h * 0.5;
+    const Act = animTo("nav:" + i, st.page === i ? 1 : 0, 16);
+    const ActEase = Act * Act * (3 - 2 * Act);
+    const A = ColAccent();
+    if (ActEase > 0.01) {
+      outlineRR(Item, IconRadius, 4.5 * S, withA(A, 0.12 * ActEase));
+      outlineRR(Item, IconRadius, 1.3 * S, withA(A, 0.95 * ActEase));
+    }
+    if (ActEase < 0.99) outlineRR(Item, IconRadius, 1 * S, C(1, 1, 1, (Hov ? 0.32 : 0.14) * (1 - ActEase)));
+    iconLabel(Item, icons[i], ItemSize * 0.46, ALIGN_CENTER, ColText());
+    if (doClick("nav:" + i, Item) && st.page !== i) {
+      st.page = i;
+      st.pageAnim = 0;
+      st.openDropdown = null;
+      st.openColor = null;
+    }
+  }
+}
+
+function renderHeader(Panel) {
+  const HeaderHeight = 46 * S;
+  label(rect(Panel.x + 16 * S, Panel.y, 300 * S, HeaderHeight), pages[st.page].title, 12 * S, ALIGN_LEFT, ColText());
+  const Right = Panel.x + Panel.w - 24 * S;
+
+  if (ui.offline) {
+    const Chip = rect(Right - 84 * S - 32 * S, Panel.y + (HeaderHeight - 22 * S) / 2, 84 * S, 22 * S);
+    const Hov = hover(Chip);
+    outlineRR(Chip, Chip.h * 0.5, 1 * S, C(1, 1, 1, Hov ? 0.40 : 0.20));
+    label(Chip, "Сервера", 6 * S, ALIGN_CENTER, Hov ? ColText() : ColMuted());
+    doClick("chip", Chip);
+  }
+
+  const CloseBtn = rect(Right - 22 * S, Panel.y + (HeaderHeight - 22 * S) / 2, 22 * S, 22 * S);
+  const CloseHover = hover(CloseBtn);
+  outlineRR(CloseBtn, CloseBtn.h * 0.5, 1 * S, C(1, 1, 1, CloseHover ? 0.42 : 0.20));
+  iconLabel(CloseBtn, ICON_XMARK, CloseBtn.w * 0.42, ALIGN_CENTER, ColText());
+  if (doClick("close", CloseBtn)) closeMenu();
+}
+
+function doSearchBar(Bar) {
+  const HasText = st.search.length > 0;
+  const IconRect = rect(Bar.x + 3 * S, Bar.y, 22 * S, Bar.h);
+  const ClearRect = rect(Bar.x + Bar.w - 17 * S - 4 * S, Bar.y + (Bar.h - 17 * S) * 0.5, 17 * S, 17 * S);
+  const Field = rect(IconRect.x + IconRect.w - 1 * S, Bar.y + 1 * S, 0, Bar.h - 2 * S);
+  Field.w = (HasText ? ClearRect.x - 2 * S : Bar.x + Bar.w - 5 * S) - Field.x;
+
+  if (doClick("searchfield", Field)) st.searchFocus = true;
+  const FocusT = animTo("searchfocus", st.searchFocus ? 1 : 0, 18);
+  if (FocusT > 0.01) outlineRR(Bar, Bar.h * 0.5, 4 * S, withA(ColAccent(), 0.14 * FocusT));
+  outlineRR(Bar, Bar.h * 0.5, 1.2 * S, C(1, 1, 1, 0.24 + 0.21 * FocusT));
+  iconLabel(IconRect, ICON_SEARCH, 8 * S, ALIGN_CENTER, ColText());
+
+  if (HasText) {
+    const HoverX = hover(ClearRect);
+    outlineRR(ClearRect, ClearRect.h * 0.5, 1 * S, C(1, 1, 1, HoverX ? 0.45 : 0.22));
+    iconLabel(ClearRect, ICON_XMARK, 7 * S, ALIGN_CENTER, ColText());
+    if (doClick("clear", ClearRect)) st.search = "";
+  }
+
+  ctx.font = 6.2 * S + 'px "PeekggFace"';
+  ctx.textBaseline = "middle";
+  ctx.textAlign = "left";
+  const ty = Field.y + Field.h * 0.5;
+  if (HasText) {
+    ctx.fillStyle = css(ColText());
+    ctx.fillText(st.search, Field.x, ty);
+    if (st.searchFocus && Math.floor(tNow * 2) % 2 === 0) {
+      const w = ctx.measureText(st.search).width;
+      ctx.fillRect(Field.x + w + 0.5 * S, ty - 3.5 * S, Math.max(0.8, 0.9 * S), 7 * S);
+    }
+  } else {
+    ctx.fillStyle = css(C(0.36, 0.37, 0.44, 0.95));
+    ctx.fillText("Поиск модулей...", Field.x, ty);
+    if (st.searchFocus && Math.floor(tNow * 2) % 2 === 0) ctx.fillRect(Field.x + 0.5 * S, ty - 3.5 * S, Math.max(0.8, 0.9 * S), 7 * S);
+  }
+}
+
+function writeColor(rgb) { if (st.openColor) cfg[st.openColor] = packHsla(rgb); }
+function packHsla(c) {
+  const max = Math.max(c.r, c.g, c.b), min = Math.min(c.r, c.g, c.b), d = max - min;
+  let h = 0;
+  if (d > 0) {
+    if (max === c.r) h = ((c.g - c.b) / d) % 6;
+    else if (max === c.g) h = (c.b - c.r) / d + 2;
+    else h = (c.r - c.g) / d + 4;
+    h /= 6;
+    if (h < 0) h += 1;
+  }
+  const l = (max + min) * 0.5;
+  const s = d === 0 ? 0 : d / (1 - Math.abs(2 * l - 1));
+  const b = (v) => Math.max(0, Math.min(255, Math.round(v * 255)));
+  return ((b(h) << 24) | (b(s) << 16) | (b(l) << 8) | b(c.a)) >>> 0;
+}
+
+function drawColorPopup(Panel) {
+  if (!st.openColor) return;
+  const W = 224 * S, Pad = 8 * S, HeaderH = 12 * S, SvH = 92 * S, BarH = 10 * S, PresetH = 12 * S;
+  const H = Pad * 2 + HeaderH + 6 * S + SvH + 6 * S + BarH + 6 * S + BarH + 8 * S + PresetH;
+  const Popup = rect(0, 0, W, H);
+  Popup.x = Math.max(Panel.x + 4 * S, Math.min(st.colorRect.x + st.colorRect.w - W, Panel.x + Panel.w - W - 4 * S));
+  Popup.y = st.colorRect.y + st.colorRect.h + 4 * S;
+  if (Popup.y + H > Panel.y + Panel.h - 4 * S) Popup.y = st.colorRect.y - H - 4 * S;
+  Popup.y = Math.max(Panel.y + 4 * S, Math.min(Popup.y, Panel.y + Panel.h - H - 4 * S));
+
+  outlineRR(Popup, 10 * S, 1 * S, C(1, 1, 1, 0.22));
+  fillRR(inset(Popup, 1 * S), 9 * S, C(0.035, 0.04, 0.055, 0.96));
+
+  const Inner = inset(Popup, 1 * S);
+  const Title = rect(Inner.x + Pad, Inner.y + Pad - 1 * S, Inner.w - Pad * 2, HeaderH);
+  label(Title, "ЦВЕТ", 5.8 * S, ALIGN_LEFT, ColMuted());
+  const CurCol = hsvToRgb(st.hue, st.sat, st.val, 1);
+  const hex = "#" + [CurCol.r, CurCol.g, CurCol.b].map((v) => Math.round(Math.max(0, Math.min(1, v)) * 255).toString(16).padStart(2, "0")).join("").toUpperCase();
+  label(rect(Title.x + Title.w - 60 * S - 34 * S, Title.y, 60 * S, Title.h), hex, 5.6 * S, ALIGN_RIGHT, ColText());
+  label(rect(Title.x + Title.w - 30 * S, Title.y, 30 * S, Title.h), Math.round(st.alpha * 100) + "%", 5.6 * S, ALIGN_RIGHT, ColMuted());
+
+  const Sv = rect(Inner.x + Pad, Inner.y + Pad + HeaderH + 5 * S, Inner.w - Pad * 2, SvH);
+  fillRR(Sv, 0, hsvToRgb(st.hue, 1, 1, 1));
+  const gw = ctx.createLinearGradient(Sv.x, Sv.y, Sv.x + Sv.w, Sv.y);
+  gw.addColorStop(0, "rgba(255,255,255,1)"); gw.addColorStop(1, "rgba(255,255,255,0)");
+  ctx.fillStyle = gw; ctx.fillRect(Sv.x, Sv.y, Sv.w, Sv.h);
+  const gb = ctx.createLinearGradient(Sv.x, Sv.y, Sv.x, Sv.y + Sv.h);
+  gb.addColorStop(0, "rgba(0,0,0,0)"); gb.addColorStop(1, "rgba(0,0,0,1)");
+  ctx.fillStyle = gb; ctx.fillRect(Sv.x, Sv.y, Sv.w, Sv.h);
+  outlineRR(Sv, 2 * S, 1 * S, C(0, 0, 0, 0.35));
+
+  const Cx = Sv.x + Math.max(0, Math.min(1, st.sat)) * Sv.w;
+  const Cy = Sv.y + (1 - Math.max(0, Math.min(1, st.val))) * Sv.h;
+  const cross = (grow, color) => {
+    const L = 5 * S + grow, T = Math.max(1, 1 * S) + grow * 2;
+    ctx.fillStyle = css(color);
+    ctx.fillRect(Cx - L, Cy - T * 0.5, L * 2, T);
+    ctx.fillRect(Cx - T * 0.5, Cy - L, T, L * 2);
+  };
+  cross(0.8 * S, C(0, 0, 0, 0.35));
+  cross(0, C(1, 1, 1, 0.98));
+
+  const HueBar = rect(Sv.x, Sv.y + Sv.h + 6 * S, Sv.w, BarH);
+  const AlphaBar = rect(Sv.x, HueBar.y + BarH + 6 * S, Sv.w, BarH);
+  const Presets = rect(Sv.x, AlphaBar.y + BarH + 8 * S, Sv.w, PresetH);
+
+  const gh = ctx.createLinearGradient(HueBar.x, HueBar.y, HueBar.x + HueBar.w, HueBar.y);
+  for (let i = 0; i <= 6; i++) gh.addColorStop(i / 6, css(hsvToRgb((i / 6) % 1, 1, 1, 1)));
+  ctx.fillStyle = gh; ctx.fillRect(HueBar.x, HueBar.y, HueBar.w, HueBar.h);
+
+  const Cell = 4 * S;
+  fillRR(AlphaBar, 0, C(1, 1, 1, 0.22));
+  for (let y = AlphaBar.y; y < AlphaBar.y + AlphaBar.h; y += Cell) {
+    const rowIdx = Math.floor((y - AlphaBar.y) / Cell) & 1;
+    const off = rowIdx ? Cell : 0;
+    for (let x = AlphaBar.x; x < AlphaBar.x + AlphaBar.w; x += Cell * 2) {
+      const sq = rect(x + off, y, Math.min(Cell, AlphaBar.x + AlphaBar.w - x - off), Math.min(Cell, AlphaBar.y + AlphaBar.h - y));
+      if (sq.w > 0 && sq.h > 0) fillRR(sq, 0, C(0.55, 0.55, 0.6, 0.35));
+    }
+  }
+  const ga = ctx.createLinearGradient(AlphaBar.x, AlphaBar.y, AlphaBar.x + AlphaBar.w, AlphaBar.y);
+  ga.addColorStop(0, "rgba(" + (CurCol.r * 255) + "," + (CurCol.g * 255) + "," + (CurCol.b * 255) + ",0)");
+  ga.addColorStop(1, "rgba(" + (CurCol.r * 255) + "," + (CurCol.g * 255) + "," + (CurCol.b * 255) + ",1)");
+  ctx.fillStyle = ga; ctx.fillRect(AlphaBar.x, AlphaBar.y, AlphaBar.w, AlphaBar.h);
+
+  const barHandle = (Bar, pos) => {
+    const Knob = rect(Bar.x + Math.max(0, Math.min(1, pos)) * Bar.w - 5.5 * S, Bar.y + Bar.h * 0.5 - 5.5 * S, 11 * S, 11 * S);
+    disc(Knob, C(0, 0, 0, 0.35));
+    disc(inset(Knob, 1 * S), C(1, 1, 1, 0.98));
+  };
+  barHandle(HueBar, st.hue);
+  barHandle(AlphaBar, st.alpha);
+
+  const presets = [
+    C(1, 1, 1), C(0.35, 0.80, 0.83), C(0.34, 0.55, 0.95), C(0.62, 0.45, 0.95),
+    C(0.95, 0.50, 0.78), C(0.90, 0.20, 0.22), C(1, 0.60, 0.20), C(1, 0.86, 0.30),
+    C(0.45, 0.82, 0.40), C(0.30, 0.78, 0.66), C(0.93, 0.80, 0.52), C(0.72, 0.73, 0.78),
+  ];
+  const Pw = Presets.w / presets.length;
+  for (let i = 0; i < presets.length; i++) {
+    const Cr = rect(Presets.x + Pw * i + 1 * S, Presets.y, Pw - 2 * S, Presets.h);
+    disc(Cr, presets[i]);
+    if (doClick("preset:" + i, Cr)) {
+      rgbToHsv(presets[i]);
+      st.alpha = 1;
+      writeColor(presets[i]);
+    }
+  }
+
+  if (mouse.down && st.colorDrag === 0) {
+    if (inside(Sv)) st.colorDrag = 1;
+    else if (inside(HueBar)) st.colorDrag = 2;
+    else if (inside(AlphaBar)) st.colorDrag = 3;
+  }
+  if (!mouse.down) st.colorDrag = 0;
+  if (mouse.down && st.colorDrag === 1) {
+    st.sat = Math.max(0, Math.min(1, (mouse.x - Sv.x) / Sv.w));
+    st.val = 1 - Math.max(0, Math.min(1, (mouse.y - Sv.y) / Sv.h));
+    writeColor(hsvToRgb(st.hue, st.sat, st.val, st.alpha));
+  } else if (mouse.down && st.colorDrag === 2) {
+    st.hue = Math.max(0, Math.min(0.999, (mouse.x - HueBar.x) / HueBar.w));
+    writeColor(hsvToRgb(st.hue, st.sat, st.val, st.alpha));
+  } else if (mouse.down && st.colorDrag === 3) {
+    st.alpha = Math.max(0, Math.min(1, (mouse.x - AlphaBar.x) / AlphaBar.w));
+    writeColor(hsvToRgb(st.hue, st.sat, st.val, st.alpha));
+  }
+}
+
+
+function resize() {
+  dpr = Math.min(2, window.devicePixelRatio || 1);
+  cv.width = Math.round(window.innerWidth * dpr);
+  cv.height = Math.round(window.innerHeight * dpr);
+  buildScene(cv.width, cv.height);
+}
+window.addEventListener("resize", () => { resize(); });
+
+function drawClosed() {
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(blurCv, 0, 0, cv.width, cv.height);
+  ctx.fillStyle = css(C(0.02, 0.02, 0.03, Math.max(0, Math.min(1, cfg.ClPeekggOpacity / 100)) * 0.55));
+  ctx.fillRect(0, 0, cv.width, cv.height);
+  ctx.textAlign = "center";
+  ctx.textBaseline = "middle";
+  ctx.font = 14 * dpr + 'px "PeekggFace"';
+  ctx.fillStyle = css(C(0.97, 0.97, 1, 0.85));
+  ctx.fillText(String(cfg.ClPeekggKey).toUpperCase(), cv.width / 2, cv.height / 2 - 10 * dpr);
+  ctx.font = 8 * dpr + 'px "PeekggFace"';
+  ctx.fillStyle = css(C(0.78, 0.79, 0.86, 0.55));
+  ctx.fillText("открыть меню", cv.width / 2, cv.height / 2 + 14 * dpr);
+}
+
+let lastTs = 0;
+function frame(ts) {
+  const now = ts / 1000;
+  dt = Math.min(0.1, Math.max(1 / 240, lastTs ? now - lastTs : 1 / 60));
+  lastTs = now;
+  tNow = now;
+
+  const H = window.innerHeight;
+  const ScaleBase = H / 600 * (cfg.ClPeekggScale / 100);
+
+  if (!st.cardsInit) {
+    for (let p = 0; p < 3; p++) for (let c = 0; c < 32; c++) st.collapsed[p][c] = !ui.expanded;
+    st.cardsInit = true;
+  }
+
+  if (!st.active) {
+    drawClosed();
+    mouse.pressed = false; mouse.released = false;
+    requestAnimationFrame(frame);
+    return;
+  }
+
+  if (st.closing) {
+    st.openAnim = Math.max(0, st.openAnim - dt * 2.2);
+    if (st.openAnim <= 0.001) {
+      st.closing = false;
+      st.active = false;
+      st.openAnim = 0;
+      drawClosed();
+      mouse.pressed = false; mouse.released = false;
+      requestAnimationFrame(frame);
+      return;
+    }
+  } else {
+    st.openAnim = Math.min(1, st.openAnim + dt * 1.9);
+  }
+
+  const OpenEase = st.openAnim * st.openAnim * (3 - 2 * st.openAnim);
+  const Pour = 0.04 + 0.96 * OpenEase;
+  const Scale = ScaleBase * Pour;
+  ScalePx = Scale;
+  S = Pour;
+
+  st.pageAnim = Math.min(1, st.pageAnim + dt * 4);
+  const PageEase = 1 - Math.pow(1 - st.pageAnim, 3);
+
+  screenR = rect(0, 0, window.innerWidth / Scale, H / Scale);
+
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.drawImage(sceneCv, 0, 0, cv.width, cv.height);
+
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  const DimAlpha = Math.max(0, Math.min(1, cfg.ClPeekggOpacity / 100)) * (ui.offline ? 0.22 : 0.55) * (0.15 + 0.85 * OpenEase);
+  ctx.fillStyle = css(C(0.02, 0.02, 0.03, DimAlpha));
+  ctx.fillRect(0, 0, cv.width, cv.height);
+
+  ctx.setTransform(Scale * dpr, 0, 0, Scale * dpr, 0, 0);
+
+  const RailW = 46 * S, Gap = 14 * S, SearchH = 28 * S, SearchGap = 10 * S;
+  const PanelW = Math.min(700 * S, screenR.w - 90 * S);
+  const PanelH = Math.min(398 * S, screenR.h - 90 * S);
+  const TotalW = RailW + Gap + PanelW;
+  const TotalH = PanelH + SearchGap + SearchH;
+  const X = (screenR.w - TotalW) * 0.5;
+  const CenteredY = (screenR.h - TotalH) * 0.5;
+  const AnchoredY = screenR.h - TotalH - 2 * S;
+  const Y = AnchoredY + (CenteredY - AnchoredY) * OpenEase;
+
+  const Rail = rect(X, Y, RailW, PanelH);
+  const Panel = rect(X + RailW + Gap, Y, PanelW, PanelH);
+  const SearchW = Math.min(430 * S, PanelW * 0.82);
+  const Search = rect(Panel.x + (PanelW - SearchW) * 0.5, Y + PanelH + SearchGap, SearchW, SearchH);
+
+  drawGlass(Rail, Math.min(Rail.w, Rail.h) * 0.5);
+  drawGlass(Panel, 12 * S);
+  drawGlass(Search, Search.h * 0.5);
+
+  renderSidebar(Rail);
+  renderHeader(Panel);
+
+  const HeaderHeight = 46 * S;
+  const Area = rect(Panel.x + 22 * S + (1 - PageEase) * 22 * S, Panel.y + HeaderHeight + 6 * S, Panel.w - 44 * S, Panel.h - HeaderHeight - 6 * S - 20 * S);
+
+  ctx.save();
+  pathRR(Panel.x, Panel.y, Panel.w, Panel.h, 12 * S);
+  ctx.clip();
+  renderCards(Area, Panel);
+  if (st.page === 2) {
+    label(rect(Area.x, Area.y + Area.h - 14 * S, Area.w, 11 * S), "Клик по кнопке клавиши и нажми любую клавишу, чтобы сменить бинд.", 5.5 * S, ALIGN_LEFT, ColDim());
+  }
+  drawDropdownList(Panel);
+  drawColorPopup(Panel);
+  ctx.restore();
+
+  doSearchBar(Search);
+
+  if (mouse.x > -500) {
+    const L = 5.5 * S, T2 = Math.max(1, 0.75 * S);
+    const drawCross = (grow, color) => {
+      const T = T2 + grow * 2, Len = L + grow;
+      ctx.fillStyle = css(color);
+      ctx.fillRect(mouse.x - Len, mouse.y - T * 0.5, Len * 2, T);
+      ctx.fillRect(mouse.x - T * 0.5, mouse.y - Len, T, Len * 2);
+    };
+    drawCross(0.55 * S, C(0, 0, 0, 0.35));
+    drawCross(0, C(1, 1, 1, 0.95));
+  }
+
+  mouse.pressed = false;
+  mouse.released = false;
+  requestAnimationFrame(frame);
+}
+
+function closeMenu() {
+  st.closing = true;
+  st.awaitingKey = false;
+  st.activeSlider = null;
+  st.openDropdown = null;
+  st.openColor = null;
+}
+function openMenu() {
+  const t = performance.now() / 1000;
+  if (t - st.lastOpenTime < 2) return;
+  st.lastOpenTime = t;
+  st.active = true;
+  st.closing = false;
+  st.pageAnim = 1;
+  lastTs = 0;
+}
+
+cv.addEventListener("pointermove", (e) => {
+  mouse.x = e.clientX / ScalePx;
+  mouse.y = e.clientY / ScalePx;
+});
+cv.addEventListener("pointerdown", (e) => {
+  cv.setPointerCapture(e.pointerId);
+  mouse.x = e.clientX / ScalePx;
+  mouse.y = e.clientY / ScalePx;
+  mouse.down = true;
+  mouse.pressed = true;
+});
+cv.addEventListener("pointerup", (e) => {
+  mouse.x = e.clientX / ScalePx;
+  mouse.y = e.clientY / ScalePx;
+  mouse.down = false;
+  mouse.released = true;
+});
+cv.addEventListener("pointerleave", () => { mouse.down = false; mouse.x = -1000; mouse.y = -1000; });
+cv.addEventListener("wheel", (e) => {
+  e.preventDefault();
+  if (!st.active) return;
+  st.scroll[st.page] += (e.deltaY > 0 ? 52 : -52) / S;
+  st.openDropdown = null;
+  st.openColor = null;
+}, { passive: false });
+
+window.addEventListener("keydown", (e) => {
+  const key = e.key;
+  if (st.awaitingKey) {
+    e.preventDefault();
+    if (key === "Escape") st.awaitingKey = false;
+    else if (key.length >= 1) cfg.ClPeekggKey = key.toUpperCase();
+    return;
+  }
+  if (!st.active) {
+    if (key === "Insert" || key.toUpperCase() === String(cfg.ClPeekggKey).toUpperCase()) openMenu();
+    return;
+  }
+  if (st.searchFocus) {
+    if (key === "Escape") { st.searchFocus = false; return; }
+    if (key === "Enter") { st.searchFocus = false; return; }
+    if (key === "Backspace") { e.preventDefault(); st.search = st.search.slice(0, -1); return; }
+    if (key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); st.search += key; return; }
+    return;
+  }
+  if (key === "Escape") {
+    if (st.openDropdown) st.openDropdown = null;
+    else if (st.openColor) st.openColor = null;
+    else closeMenu();
+    return;
+  }
+  if (key === "Insert" || key.toUpperCase() === String(cfg.ClPeekggKey).toUpperCase()) closeMenu();
+});
+
+const dAccent = document.getElementById("d-accent");
+const dScale = document.getElementById("d-scale");
+const dOpacity = document.getElementById("d-opacity");
+dAccent.oninput = () => { cfg.ClPeekggAccent = +dAccent.value; document.getElementById("d-accent-v").textContent = dAccent.value; };
+dScale.oninput = () => { cfg.ClPeekggScale = +dScale.value; document.getElementById("d-scale-v").textContent = dScale.value; };
+dOpacity.oninput = () => { cfg.ClPeekggOpacity = +dOpacity.value; document.getElementById("d-opacity-v").textContent = dOpacity.value; };
+document.getElementById("d-offline").onchange = (e) => { ui.offline = e.target.checked; };
+document.getElementById("d-cards").onchange = (e) => {
+  ui.expanded = e.target.checked;
+  for (let p = 0; p < 3; p++) for (let c = 0; c < 32; c++) st.collapsed[p][c] = !ui.expanded;
+  anims.clear();
+};
+window.addEventListener("keydown", (e) => {
+  if (e.key === "h" || e.key === "H") document.getElementById("dev").classList.toggle("hidden");
+});
+
+resize();
+Promise.all([document.fonts.load('12px "PeekggFace"'), document.fonts.load('12px "PeekggIcons"')]).then(() => {
+  requestAnimationFrame(frame);
+});
+</script>
+</body>
+</html>
