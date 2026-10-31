@@ -13,10 +13,12 @@ pub fn default_style() -> Style {
     visuals.widgets.inactive.fg_stroke = Stroke::new(1.0_f32, Color32::from_rgb(200, 200, 200));
     visuals.clip_rect_margin = 0.0;
     visuals.slider_trailing_fill = true;
-    Style {
+    let mut style = Style {
         visuals,
         ..Default::default()
-    }
+    };
+    super::theme::by_utf8xbot_9111(&mut style);
+    style
 }
 
 pub fn topbar_buttons() -> Style {

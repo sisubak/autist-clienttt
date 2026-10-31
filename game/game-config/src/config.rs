@@ -789,6 +789,73 @@ pub struct ConfigMenu {
 
 #[config_default]
 #[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigBestClientUi {
+    /// Replaces the stock client visuals: accent color, widget rounding,
+    /// scrollbars and animation speed.
+    #[default = true]
+    pub better_ui: bool,
+    /// Accent color used for selection, sliders, hover and highlights.
+    #[default = ConfRgb { r: 0, g: 170, b: 255 }]
+    pub accent: ConfRgb,
+    /// Corner rounding of widgets in pixels.
+    #[conf_valid(range(min = 0.0, max = 20.0))]
+    #[default = 5.0]
+    pub corner_rounding: f64,
+    /// Duration of widget animations in seconds. 0 disables animations.
+    #[conf_valid(range(min = 0.0, max = 1.0))]
+    #[default = 0.16]
+    pub animation_time: f64,
+    /// Slim scrollbar with a wide grab area instead of the floating overlay one.
+    #[default = true]
+    pub better_scrollbar: bool,
+    /// Width of the scrollbar in pixels.
+    #[conf_valid(range(min = 2.0, max = 32.0))]
+    #[default = 8.0]
+    pub scrollbar_width: f64,
+    /// Global scale of all UI text styles.
+    #[conf_valid(range(min = 0.5, max = 2.0))]
+    #[default = 1.0]
+    pub font_scale: f64,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigBestClientDiscord {
+    /// Publish a rich presence over the local discord IPC socket.
+    #[default = false]
+    pub enabled: bool,
+    /// Discord application id the presence is registered for.
+    #[default = ""]
+    pub app_id: String,
+    /// Pipe index of the running discord client, 0 tries every available pipe.
+    #[conf_valid(range(min = 0, max = 9))]
+    #[default = 0]
+    pub pipe_index: u64,
+    /// Show the current server in the presence.
+    #[default = true]
+    pub show_server: bool,
+    /// Show the current state (menu, spectating, playing) in the presence.
+    #[default = true]
+    pub show_state: bool,
+    /// Asset key of the large presence image.
+    #[default = ""]
+    pub large_image: String,
+    /// Text shown while no server is joined.
+    #[default = "In the menus"]
+    pub idle_state: String,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
+pub struct ConfigBestClient {
+    /// Ui/theme related settings.
+    pub ui: ConfigBestClientUi,
+    /// Discord rich presence settings.
+    pub discord: ConfigBestClientDiscord,
+}
+
+#[config_default]
+#[derive(Debug, Clone, Serialize, Deserialize, ConfigInterface)]
 pub struct ConfigGame {
     /// Client related config.
     pub cl: ConfigClient,
@@ -811,6 +878,8 @@ pub struct ConfigGame {
     pub snd: ConfigSound,
     /// Debug related config for the game.
     pub dbg: ConfigDebug,
+    /// BestClient related config.
+    pub bc: ConfigBestClient,
 }
 
 impl ConfigGame {

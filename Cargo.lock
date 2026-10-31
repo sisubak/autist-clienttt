@@ -1648,6 +1648,18 @@ dependencies = [
 ]
 
 [[package]]
+name = "client-bestclient"
+version = "0.1.0"
+dependencies = [
+ "egui",
+ "game-config",
+ "serde",
+ "serde_json",
+ "tracing",
+ "ui-base",
+]
+
+[[package]]
 name = "client-console"
 version = "0.1.0"
 dependencies = [
@@ -1931,6 +1943,7 @@ dependencies = [
  "base-io-traits",
  "binds",
  "chrono",
+ "client-bestclient",
  "client-containers",
  "client-render-base",
  "client-types",
@@ -3081,6 +3094,7 @@ dependencies = [
  "camera",
  "chrono",
  "client-accounts",
+ "client-bestclient",
  "client-console",
  "client-containers",
  "client-demo",

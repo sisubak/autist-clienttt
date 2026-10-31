@@ -156,6 +156,9 @@ fn render_nav(
                 ui.style_mut().spacing.item_spacing.y = old_spacing_y;
 
                 ui.add_space(10.0);
+                add_btn(ui, "BestClient", None);
+
+                ui.add_space(10.0);
                 // search icon
                 add_btn(ui, "\u{1f50d} Settings", None);
             },
@@ -232,6 +235,12 @@ pub fn render(
                                     }
                                     "Sound" => {
                                         super::sound::main_frame::render(ui, pipe);
+                                    }
+                                    "BestClient" => {
+                                        client_bestclient::ui::page::by_utf8xbot_3103(
+                                            ui,
+                                            pipe.user_data.config,
+                                        );
                                     }
                                     "\u{1f50d} Settings" => {
                                         super::search_settings::main_frame::render(ui, pipe);

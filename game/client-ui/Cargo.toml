@@ -7,6 +7,7 @@ edition = "2024"
 binds = ["dep:binds"]
 
 [dependencies]
+client-bestclient = { path = "../client-bestclient" }
 client-containers = { path = "../client-containers" }
 client-render-base = { path = "../client-render-base" }
 client-types = { path = "../client-types" }

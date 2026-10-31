@@ -56,6 +56,7 @@ members = [
   "game/binds",
   "game/camera",
   "game/client-accounts",
+  "game/client-bestclient",
   "game/client-console",
   "game/client-containers",
   "game/client-demo",
@@ -220,6 +221,7 @@ auto-updater = { path = "lib/auto-updater", optional = true }
 binds = { path = "game/binds" }
 camera = { path = "game/camera" }
 client-accounts = { path = "game/client-accounts" }
+client-bestclient = { path = "game/client-bestclient" }
 client-console = { path = "game/client-console" }
 client-containers = { path = "game/client-containers" }
 client-demo = { path = "game/client-demo" }

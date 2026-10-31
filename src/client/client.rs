@@ -1447,6 +1447,7 @@ impl ClientNativeImpl {
                         .max(self.config.engine.ui.min_pixels_per_point as f32)
                         * self.config.engine.ui.scale as f32,
                 ));
+                client_bestclient::theme::by_utf8xbot_2102(&self.config.game.bc.ui);
                 // render ui last
                 if let Some(output) = self.ui_manager.render(
                     &self.config.engine.ui.path.name.clone(),

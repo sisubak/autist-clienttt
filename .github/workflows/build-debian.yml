@@ -1,0 +1,94 @@
+name: build-debian
+
+on:
+  push:
+    branches:
+      - main
+      - "bestclient/**"
+  pull_request:
+  workflow_dispatch:
+
+env:
+  CARGO_TERM_COLOR: always
+  CARGO_INCREMENTAL: "0"
+  RUST_BACKTRACE: "1"
+
+jobs:
+  build:
+    name: release (debian bookworm)
+    runs-on: ubuntu-latest
+    container:
+      image: debian:bookworm-slim
+    timeout-minutes: 180
+
+    steps:
+      - name: install build deps
+        run: |
+          apt-get update
+          DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends \
+            build-essential \
+            ca-certificates \
+            clang \
+            cmake \
+            curl \
+            git \
+            libasound2-dev \
+            libgl1-mesa-dev \
+            libssl-dev \
+            libudev-dev \
+            libx11-dev \
+            libxcb1-dev \
+            libxkbcommon-dev \
+            libxkbcommon-x11-dev \
+            nasm \
+            pkg-config \
+            python3 \
+            zlib1g-dev
+          rm -rf /var/lib/apt/lists/*
+
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+          fetch-depth: 0
+
+      - name: install rust
+        run: |
+          curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs \
+            | sh -s -- -y --profile minimal --default-toolchain stable
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+
+      - name: rust version
+        run: |
+          . "$HOME/.cargo/env"
+          rustc --version
+          cargo --version
+
+      - uses: Swatinem/rust-cache@v2
+        with:
+          key: debian-bookworm-release
+
+      - name: build client
+        run: |
+          . "$HOME/.cargo/env"
+          cargo build --release -p ddnet-rs --locked
+
+      - name: build reverse proxy
+        continue-on-error: true
+        run: |
+          . "$HOME/.cargo/env"
+          cargo build --release -p reverse-proxy --locked
+
+      - name: package
+        run: |
+          mkdir -p out
+          cp target/release/ddnet-rs out/ 2>/dev/null || true
+          cp target/release/reverse-proxy out/ 2>/dev/null || true
+          cp -r data out/data 2>/dev/null || true
+          tar -C out -czf "ddnet-rs-debian-bookworm-${GITHUB_SHA::8}.tar.gz" .
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: ddnet-rs-debian-bookworm
+          path: ddnet-rs-debian-bookworm-*.tar.gz
+          if-no-files-found: error
+          retention-days: 14

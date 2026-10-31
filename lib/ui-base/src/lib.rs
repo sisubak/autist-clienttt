@@ -6,6 +6,7 @@ pub mod custom_callback;
 pub mod font_data;
 pub mod remember_mut;
 pub mod style;
+pub mod theme;
 pub mod types;
 pub mod ui;
 pub mod ui_render;

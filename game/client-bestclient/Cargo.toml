@@ -1,0 +1,19 @@
+[package]
+name = "client-bestclient"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+game-config = { path = "../game-config" }
+ui-base = { path = "../../lib/ui-base" }
+
+egui = { version = "0.34", default-features = false, features = ["serde"] }
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+tracing = { version = "0.1", default-features = false, features = [
+  "attributes",
+] }
+
+[target.'cfg(windows)'.dependencies]
+
+[target.'cfg(unix)'.dependencies]
