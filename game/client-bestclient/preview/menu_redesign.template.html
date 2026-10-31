@@ -1,0 +1,1115 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<title>peekgg — redesign prototype</title>
+<style>
+  @font-face { font-family: "PeekggFace"; src: url(data:font/otf;base64,__ACTAY__) format("opentype"); }
+  @font-face { font-family: "PeekggIcons"; src: url(data:font/otf;base64,__ICONS__) format("opentype"); }
+
+  * { box-sizing: border-box; }
+
+  html, body {
+    margin: 0; height: 100%; overflow: hidden;
+    background: #1b1b1e;
+    font-family: "PeekggFace", sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  :root {
+    --page: #1b1b1e;
+    --bezel: #46464c;
+    --bezel-hi: #5a5a61;
+    --surface: #333338;
+    --panel: #53535a;
+    --panel-2: #5c5c64;
+    --panel-hi: #b6b6bd;
+    --ink: #e6e6ea;
+    --ink-mid: #c2c2c9;
+    --ink-dim: #96969f;
+    --ink-inv: #2a2a2e;
+    --grip: #9b9ba4;
+    --track: rgba(255, 255, 255, .17);
+    --track-hi: rgba(255, 255, 255, .34);
+    --hair: rgba(255, 255, 255, .07);
+    --acc: #d7d7dd;
+    --r-xl: 46px;
+    --r-l: 30px;
+    --r-m: 26px;
+    --r-s: 18px;
+  }
+
+  body::before {
+    content: "";
+    position: fixed; inset: 0;
+    background:
+      radial-gradient(120% 90% at 50% 0%, rgba(255,255,255,.06), transparent 60%),
+      radial-gradient(100% 100% at 50% 120%, rgba(0,0,0,.55), transparent 70%),
+      var(--page);
+    z-index: 0;
+  }
+
+  body::after {
+    content: "";
+    position: fixed; inset: 0;
+    opacity: .30; z-index: 1; pointer-events: none;
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='220' height='220'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/><feColorMatrix type='saturate' values='0'/></filter><rect width='220' height='220' filter='url(%23n)' opacity='0.55'/></svg>");
+    mix-blend-mode: overlay;
+  }
+
+  #viewport { position: fixed; inset: 0; display: grid; place-items: center; z-index: 2; }
+
+  #stage {
+    position: relative;
+    width: 1120px; height: 720px;
+    transform-origin: center center;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  .bezel {
+    position: absolute; inset: 0;
+    border-radius: 38px;
+    background: linear-gradient(180deg, var(--bezel-hi), var(--bezel));
+    box-shadow:
+      0 40px 90px rgba(0, 0, 0, .55),
+      0 10px 30px rgba(0, 0, 0, .35),
+      inset 0 1px 0 rgba(255, 255, 255, .16),
+      inset 0 -1px 0 rgba(0, 0, 0, .30);
+  }
+
+  .surface {
+    position: absolute; inset: 12px;
+    border-radius: 28px;
+    background:
+      radial-gradient(120% 100% at 40% 0%, rgba(255, 255, 255, .045), transparent 65%),
+      var(--surface);
+    box-shadow:
+      inset 0 2px 10px rgba(0, 0, 0, .38),
+      inset 0 0 0 1px rgba(0, 0, 0, .22);
+  }
+
+  .chrome { position: absolute; z-index: 5; }
+
+  .brand {
+    left: 30px; top: 30px; width: 48px; height: 48px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #6c6c74, #55555c);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .22),
+      0 6px 16px rgba(0, 0, 0, .35);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: transform .35s cubic-bezier(.2, 1.6, .4, 1), box-shadow .3s;
+  }
+  .brand:hover { transform: translateY(-2px) scale(1.03); }
+  .brand:active { transform: scale(.94); }
+  .brand svg { width: 20px; height: 20px; fill: var(--ink); opacity: .92; }
+
+  .rail {
+    left: 30px; top: 102px; width: 58px; height: 576px;
+    border-radius: 29px;
+    background: linear-gradient(180deg, #54545b, #4a4a51);
+    box-shadow:
+      inset 0 1px 0 rgba(255, 255, 255, .14),
+      inset 0 0 0 1px rgba(0, 0, 0, .16),
+      0 10px 26px rgba(0, 0, 0, .30);
+    display: flex; flex-direction: column; align-items: center;
+    padding: 20px 0;
+  }
+
+  .rail-item {
+    width: 34px; height: 34px;
+    margin-bottom: 14px;
+    border-radius: 11px;
+    display: grid; place-items: center;
+    cursor: pointer;
+    position: relative;
+    transition: background .25s, transform .35s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  .rail-item span {
+    width: 9px; height: 9px;
+    border-radius: 3px;
+    background: var(--grip);
+    opacity: .55;
+    transition: all .3s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  .rail-item:hover { background: rgba(255, 255, 255, .07); transform: translateY(-1px); }
+  .rail-item:hover span { opacity: .9; }
+  .rail-item.on { background: rgba(255, 255, 255, .12); }
+  .rail-item.on span {
+    width: 13px; height: 13px; border-radius: 4px;
+    background: var(--acc);
+    opacity: 1;
+    box-shadow: 0 0 0 3px rgba(255, 255, 255, .10);
+  }
+
+  .rail-bottom {
+    margin-top: auto;
+    width: 38px; height: 38px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #6d6d76, #55555c);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .20), 0 4px 12px rgba(0, 0, 0, .3);
+    display: grid; place-items: center;
+    cursor: pointer;
+    transition: transform .35s cubic-bezier(.2, 1.6, .4, 1);
+  }
+  .rail-bottom:hover { transform: rotate(45deg) scale(1.05); }
+  .rail-bottom svg { width: 17px; height: 17px; fill: var(--ink); opacity: .85; }
+
+  .diamond {
+    left: 50%; top: 684px;
+    width: 14px; height: 14px;
+    margin-left: -7px;
+    border-radius: 4px;
+    background: rgba(255, 255, 255, .30);
+    transform: rotate(45deg);
+    cursor: pointer;
+    transition: transform .4s cubic-bezier(.2, 1.7, .4, 1), background .3s;
+  }
+  .diamond:hover { background: rgba(255, 255, 255, .55); transform: rotate(135deg) scale(1.15); }
+  .diamond:active { transform: rotate(135deg) scale(.9); }
+
+  .ghost {
+    position: absolute;
+    border-radius: var(--r-l);
+    border: 2px dashed rgba(255, 255, 255, .10);
+    opacity: 0;
+    transition: opacity .3s, border-color .2s, background .2s;
+    pointer-events: none;
+    z-index: 3;
+  }
+  .ghost.show { opacity: 1; }
+  .ghost.hot {
+    border-color: rgba(255, 255, 255, .45);
+    background: rgba(255, 255, 255, .05);
+  }
+
+  .panel {
+    position: absolute;
+    will-change: transform;
+    transform-origin: 50% 50%;
+    z-index: 10;
+    cursor: grab;
+    touch-action: none;
+  }
+  .panel.dragging { cursor: grabbing; z-index: 999; }
+
+  .panel .clip {
+    position: absolute; inset: 0;
+    overflow: hidden;
+    background: linear-gradient(180deg, var(--panel-2), var(--panel));
+    box-shadow:
+      0 18px 34px rgba(0, 0, 0, .30),
+      0 4px 10px rgba(0, 0, 0, .22),
+      inset 0 1px 0 rgba(255, 255, 255, .10),
+      inset 0 0 0 1px rgba(0, 0, 0, .12);
+    transition: box-shadow .35s;
+  }
+  .panel.dragging .clip,
+  .panel.lifted .clip {
+    box-shadow:
+      0 40px 70px rgba(0, 0, 0, .50),
+      0 12px 22px rgba(0, 0, 0, .30),
+      inset 0 1px 0 rgba(255, 255, 255, .16),
+      inset 0 0 0 1px rgba(0, 0, 0, .12);
+  }
+  .panel .clip::after {
+    content: "";
+    position: absolute; left: 0; right: 0; bottom: 0; height: 26px;
+    background: linear-gradient(to top, rgba(83, 83, 90, .95), rgba(83, 83, 90, 0));
+    pointer-events: none;
+    opacity: 0;
+    transition: opacity .3s;
+  }
+  .panel.fade .clip::after { opacity: 1; }
+  .panel.hi .clip::after {
+    background: linear-gradient(to top, rgba(182, 182, 189, .95), rgba(182, 182, 189, 0));
+  }
+  .panel.main .clip::after { display: none; }
+  .panel.hi .clip { background: linear-gradient(180deg, #c0c0c7, var(--panel-hi)); }
+  .panel.hi { color: var(--ink-inv); }
+
+  .panel-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 13px 20px 0;
+  }
+  .panel-title {
+    font-size: 11px; letter-spacing: .10em; text-transform: uppercase;
+    color: var(--ink-mid);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .panel.hi .panel-title { color: rgba(35, 35, 40, .78); }
+  .panel-sub {
+    font-size: 9px; letter-spacing: .06em; text-transform: uppercase;
+    color: var(--ink-dim);
+  }
+
+  .grip {
+    position: absolute; left: 9px; top: 50%;
+    transform: translateY(-50%);
+    display: flex; flex-direction: column; gap: 3px;
+    opacity: .55;
+    transition: opacity .25s;
+  }
+  .panel:hover .grip, .panel.dragging .grip { opacity: 1; }
+  .grip i {
+    display: block; width: 4px; height: 4px; border-radius: 2px;
+    background: var(--grip);
+  }
+  .panel.hi .grip i { background: rgba(40, 40, 46, .55); }
+
+  .knob {
+    position: absolute; left: -22px; top: 50%;
+    width: 44px; height: 44px; margin-top: -22px;
+    border-radius: 50%;
+    background: linear-gradient(180deg, #6e6e77, #57575e);
+    box-shadow:
+      0 8px 20px rgba(0, 0, 0, .40),
+      inset 0 1px 0 rgba(255, 255, 255, .22);
+    transition: transform .4s cubic-bezier(.2, 1.7, .4, 1);
+  }
+  .panel.dragging .knob { transform: scale(1.08); }
+
+  .rows { display: flex; flex-direction: column; gap: 6px; padding: 10px 16px 14px; }
+  .row {
+    display: flex; align-items: center; justify-content: space-between;
+    gap: 10px;
+    height: 23px;
+    padding: 0 9px 0 12px;
+    border-radius: 13px;
+    background: rgba(0, 0, 0, .14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+  }
+  .row-label {
+    font-size: 9.5px; letter-spacing: .07em; text-transform: uppercase;
+    color: var(--ink-mid);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .panel.hi .row { background: rgba(0, 0, 0, .10); }
+  .panel.hi .row-label { color: rgba(35, 35, 40, .80); }
+
+  .no-drag { cursor: pointer; }
+
+  .resize {
+    position: absolute; right: 6px; bottom: 6px;
+    width: 22px; height: 22px;
+    display: grid; place-items: center;
+    opacity: 0;
+    cursor: nwse-resize;
+    transition: opacity .25s;
+  }
+  .resize::after {
+    content: "";
+    width: 9px; height: 9px;
+    border-right: 2px solid rgba(255, 255, 255, .45);
+    border-bottom: 2px solid rgba(255, 255, 255, .45);
+    border-bottom-right-radius: 3px;
+  }
+  .panel:hover .resize { opacity: 1; }
+  .panel.hi .resize::after { border-color: rgba(40, 40, 46, .55); }
+
+  .tg {
+    position: relative;
+    width: 34px; height: 18px;
+    border-radius: 9px;
+    background: var(--track);
+    flex: 0 0 auto;
+    transition: background .3s;
+  }
+  .tg.on { background: var(--acc); }
+  .tg i {
+    position: absolute; top: 3px; left: 3px;
+    width: 12px; height: 12px; border-radius: 50%;
+    background: var(--ink);
+    transition: transform .45s cubic-bezier(.2, 1.9, .35, 1), background .3s;
+  }
+  .tg.on i { transform: translateX(16px); background: #3a3a40; }
+
+  .sl {
+    position: relative;
+    width: 96px; height: 18px;
+    flex: 0 0 auto;
+  }
+  .sl .trk {
+    position: absolute; left: 0; right: 0; top: 7px; height: 4px;
+    border-radius: 2px;
+    background: var(--track);
+  }
+  .sl .fil {
+    position: absolute; left: 0; top: 7px; height: 4px;
+    border-radius: 2px;
+    background: var(--acc);
+    width: 50%;
+  }
+  .sl .kn {
+    position: absolute; top: 2px; left: 50%;
+    width: 14px; height: 14px; margin-left: -7px;
+    border-radius: 50%;
+    background: var(--acc);
+    box-shadow: 0 2px 6px rgba(0, 0, 0, .35);
+  }
+
+  .pill-val {
+    font-size: 9.5px; letter-spacing: .08em;
+    color: var(--ink);
+    padding: 3px 9px;
+    border-radius: 9px;
+    background: rgba(255, 255, 255, .10);
+    flex: 0 0 auto;
+  }
+  .panel.hi .pill-val { background: rgba(0, 0, 0, .14); color: var(--ink-inv); }
+
+  .segbar { display: flex; gap: 6px; padding: 8px; height: 60px; }
+  .seg {
+    flex: 1 1 0;
+    border-radius: 22px;
+    display: grid; place-items: center;
+    font-size: 9.5px; letter-spacing: .09em; text-transform: uppercase;
+    color: var(--ink-dim);
+    background: transparent;
+    transition: background .3s, color .3s, transform .4s cubic-bezier(.2, 1.7, .4, 1);
+  }
+  .seg:hover { color: var(--ink-mid); background: rgba(255, 255, 255, .06); }
+  .seg.on {
+    background: var(--acc);
+    color: var(--ink-inv);
+    box-shadow: 0 6px 14px rgba(0, 0, 0, .25);
+  }
+
+  .main-body {
+    position: absolute; inset: 0;
+    display: grid; place-items: center;
+  }
+  .main-glyph { opacity: .34; transition: transform .6s cubic-bezier(.2, 1.5, .4, 1), opacity .4s; }
+  .main-glyph svg { width: 132px; height: 132px; fill: var(--ink); }
+  .panel.main:hover .main-glyph { transform: scale(1.04); opacity: .42; }
+
+  .main-title {
+    position: absolute; left: 34px; top: 30px;
+  }
+  .main-title .t {
+    font-size: 17px; letter-spacing: .12em; text-transform: uppercase; color: var(--ink);
+  }
+  .main-title .s {
+    margin-top: 6px;
+    font-size: 9.5px; letter-spacing: .10em; text-transform: uppercase; color: var(--ink-dim);
+  }
+  .main-chip {
+    position: absolute; right: 30px; top: 30px;
+    display: flex; align-items: center; gap: 7px;
+    padding: 7px 13px;
+    border-radius: 15px;
+    background: rgba(255, 255, 255, .10);
+    font-size: 9px; letter-spacing: .09em; text-transform: uppercase; color: var(--ink-mid);
+  }
+  .main-chip i { width: 6px; height: 6px; border-radius: 50%; background: var(--acc); }
+
+  .search { display: flex; align-items: center; gap: 12px; padding: 14px 18px; height: 100%; }
+  .search-add {
+    width: 50px; height: 50px; border-radius: 50%;
+    background: var(--acc);
+    display: grid; place-items: center;
+    flex: 0 0 auto;
+    color: var(--ink-inv);
+    transition: transform .45s cubic-bezier(.2, 1.9, .35, 1);
+  }
+  .search-add:hover { transform: rotate(90deg) scale(1.06); }
+  .search-add:active { transform: rotate(90deg) scale(.92); }
+  .search-add svg { width: 18px; height: 18px; fill: currentColor; }
+  .search-field {
+    flex: 1 1 auto; min-width: 0;
+    height: 38px;
+    border-radius: 19px;
+    background: rgba(0, 0, 0, .14);
+    box-shadow: inset 0 1px 0 rgba(255, 255, 255, .05);
+    display: flex; align-items: center;
+    padding: 0 16px;
+  }
+  .search-field input {
+    width: 100%;
+    background: none; border: 0; outline: none;
+    font-family: inherit;
+    font-size: 10px; letter-spacing: .07em;
+    color: var(--ink);
+    cursor: text;
+  }
+  .search-field input::placeholder { color: var(--ink-dim); }
+
+  .presets-body { position: absolute; inset: 0; }
+  .sheets { position: absolute; left: 22px; right: 22px; bottom: 20px; height: 92px; }
+  .sheet {
+    position: absolute; left: 0; right: 0; bottom: 0;
+    height: 76px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, #77777f, #66666e);
+    box-shadow:
+      0 10px 22px rgba(0, 0, 0, .28),
+      inset 0 1px 0 rgba(255, 255, 255, .14);
+    display: flex; align-items: flex-end;
+    padding: 12px 16px;
+    font-size: 9px; letter-spacing: .10em; text-transform: uppercase;
+    color: var(--ink);
+    transition: transform .5s cubic-bezier(.2, 1.6, .4, 1), filter .3s;
+  }
+  .sheet:nth-child(1) { transform: translate(0, 0) rotate(0deg); }
+  .sheet:nth-child(2) { transform: translate(0, -14px) rotate(3deg) scale(.965); filter: brightness(.94); }
+  .sheet:nth-child(3) { transform: translate(0, -27px) rotate(6deg) scale(.93); filter: brightness(.88); }
+  .sheet:hover { transform: translate(0, -6px) rotate(-1deg) scale(1.01); filter: brightness(1.06); z-index: 3; }
+
+  .preset-dot {
+    position: absolute; right: 20px; top: 18px;
+    width: 14px; height: 14px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, .26);
+    transition: background .3s, transform .4s cubic-bezier(.2, 1.8, .4, 1);
+  }
+  .preset-dot:hover { background: rgba(255, 255, 255, .6); transform: scale(1.2); }
+
+  .hud {
+    position: fixed; right: 14px; bottom: 14px; z-index: 100;
+    opacity: .35;
+    transition: opacity .45s ease;
+    display: flex; align-items: center; gap: 12px;
+    padding: 8px 12px;
+    font: 500 11px/1 ui-sans-serif, system-ui, sans-serif;
+    color: #8f8f9a;
+    background: rgba(20, 20, 24, .82);
+    border: 1px solid rgba(255, 255, 255, .08);
+    border-radius: 9px;
+    backdrop-filter: blur(6px);
+  }
+  .hud label { display: flex; align-items: center; gap: 6px; white-space: nowrap; }
+  .hud input[type=range] { width: 78px; }
+  .hud button {
+    font: inherit; color: #c9c9d2;
+    background: rgba(255, 255, 255, .07);
+    border: 1px solid rgba(255, 255, 255, .10);
+    border-radius: 6px; padding: 5px 9px; cursor: pointer;
+  }
+  .hud button:hover { background: rgba(255, 255, 255, .13); }
+  .hud:hover, .hud.awake { opacity: 1; }
+  .hud.hidden { display: none; }
+</style>
+</head>
+<body>
+
+<div id="viewport">
+  <div id="stage">
+    <div class="bezel"></div>
+    <div class="surface"></div>
+
+    <div class="chrome brand no-drag" title="сбросить раскладку">
+      <svg viewBox="0 0 24 24"><path d="M12 2.2l1.9 5.2 5.2 1.9-5.2 1.9L12 16.4l-1.9-5.2L4.9 9.3l5.2-1.9z"/><path d="M18.6 15.4l.9 2.3 2.3.9-2.3.9-.9 2.3-.9-2.3-2.3-.9 2.3-.9z"/></svg>
+    </div>
+
+    <div class="chrome rail" id="rail"></div>
+    <div class="chrome diamond no-drag" id="diamond" title="вернуть панели на места"></div>
+
+    <div id="ghosts"></div>
+    <div id="panels"></div>
+  </div>
+</div>
+
+<div class="hud" id="hud">
+  <label>accent <input id="h-accent" type="range" min="0" max="360" step="1" value="0"><b id="h-accent-v">серый</b></label>
+  <button id="h-bind">прикрепить всё</button>
+  <button id="h-reset">сброс</button>
+  <label>H — скрыть</label>
+</div>
+
+<script>
+"use strict";
+
+const DESIGN_W = 1120, DESIGN_H = 720;
+
+const SLOTS = {
+  main:    { x: 108, y: 30,  w: 676, h: 540, r: 46 },
+  bar:     { x: 808, y: 30,  w: 284, h: 60,  r: 30 },
+  card1:   { x: 808, y: 106, w: 284, h: 108, r: 26 },
+  card2:   { x: 808, y: 228, w: 284, h: 108, r: 26 },
+  card3:   { x: 808, y: 350, w: 284, h: 118, r: 30 },
+  rows:    { x: 430, y: 470, w: 330, h: 190, r: 34 },
+  search:  { x: 108, y: 600, w: 300, h: 78,  r: 39 },
+  presets: { x: 808, y: 490, w: 284, h: 170, r: 34 },
+};
+
+const RAIL_ITEMS = [
+  { key: "aura", title: "АУРА ЦЕЛИ", sub: "визуал · эффект" },
+  { key: "hook", title: "CUSTOM HOOKS", sub: "визуал · хук" },
+  { key: "weather", title: "ПОГОДА", sub: "визуал · атмосфера" },
+  { key: "particles", title: "ЧАСТИЦЫ", sub: "визуал · 3d" },
+  { key: "sound", title: "ЗВУКИ", sub: "настройки · аудио" },
+];
+
+const GLYPHS = {
+  aura: '<svg viewBox="0 0 24 24"><path d="M12 3.4c-4.7 0-8.6 3.8-8.6 8.6 0 .6.5 1 1.1 1h1.6c.5 0 .9-.4 1-1 .3-2.7 2.5-4.8 5.3-4.8s5 2.1 5.3 4.8c.1.6.5 1 1 1h1.6c.6 0 1.1-.4 1.1-1 0-4.8-3.9-8.6-8.6-8.6z"/><circle cx="12" cy="15.6" r="3.4"/></svg>',
+  hook: '<svg viewBox="0 0 24 24"><path d="M14.4 3.2a2.4 2.4 0 100 4.8 2.4 2.4 0 000-4.8zM6.6 10.4c-2.6 0-4.6 2-4.6 4.6s2 4.6 4.6 4.6c2.3 0 4.2-1.7 4.5-3.9h5.1c.4 0 .7-.3.7-.7V9.6h-2.6v4.2h-3.4c-.5-2-2.2-3.4-4.3-3.4z"/></svg>',
+  weather: '<svg viewBox="0 0 24 24"><path d="M6.8 13.2a4 4 0 010-8 4 4 0 013.9 3h.6a3.4 3.4 0 010 6.8H7.8a3.9 3.9 0 01-1-.2z"/><path d="M9 16.4l-1.3 3.1h2.1l1-2.4zM13.2 16.4l-1.3 3.1h2.1l1-2.4zM17.4 16.4l-1.3 3.1h2.1l1-2.4z"/></svg>',
+  particles: '<svg viewBox="0 0 24 24"><circle cx="7" cy="7.4" r="2.1"/><circle cx="16.4" cy="9" r="1.5"/><circle cx="10" cy="14.6" r="2.6"/><circle cx="17.6" cy="16.8" r="1.9"/><circle cx="6.4" cy="18.6" r="1.2"/></svg>',
+  sound: '<svg viewBox="0 0 24 24"><path d="M11 4.4L6.8 8H4.2c-.6 0-1 .4-1 1v6c0 .6.4 1 1 1h2.6L11 19.6c.6.5 1.4.1 1.4-.7V5.1c0-.8-.8-1.2-1.4-.7z"/><path d="M15.4 8.2a5.4 5.4 0 010 7.6l1.3 1.3a7.3 7.3 0 000-10.2z"/><path d="M18.2 5.4a9.3 9.3 0 010 13.2l1.3 1.3a11.2 11.2 0 000-15.8z"/></svg>',
+};
+
+const PANEL_DATA = [
+  { id: "main", slot: "main", kind: "main", title: "АУРА ЦЕЛИ", sub: "визуал · эффект" },
+  { id: "bar", slot: "bar", kind: "segbar", segs: ["ВИЗУАЛ", "АКСЕССУАРЫ", "НАСТРОЙКИ"], active: 0 },
+  { id: "card1", slot: "card1", kind: "module", title: "СВЕЧЕНИЕ ЛАЗЕРА", rows: [{ l: "Включить", t: "tg", on: false }, { l: "Сила", t: "sl", v: .5 }] },
+  { id: "card2", slot: "card2", kind: "module", title: "JELLY TEE", rows: [{ l: "Включить", t: "tg", on: true }, { l: "Сила", t: "sl", v: .82 }] },
+  { id: "card3", slot: "card3", kind: "module", hi: true, title: "ПОГОДА", rows: [{ l: "Включить", t: "tg", on: true }, { l: "Тип", t: "val", v: "СНЕГ" }] },
+  {
+    id: "rows", slot: "rows", kind: "list", title: "БЫСТРЫЕ", rows: [
+      { l: "Фриз-бары", t: "tg", on: true },
+      { l: "Хук-коллизия", t: "sl", v: .66 },
+      { l: "Прозрачность", t: "sl", v: .4 },
+      { l: "Масштаб колеса", t: "sl", v: 1 },
+      { l: "Подтверждение", t: "tg", on: false },
+    ]
+  },
+  { id: "search", slot: "search", kind: "search" },
+  { id: "presets", slot: "presets", kind: "presets", title: "ПРЕСЕТЫ", sheets: ["DEFAULT", "AIM", "VISUAL"] },
+];
+
+const panelById = new Map();
+const panelEls = new Map();
+const ghostsEl = document.getElementById("ghosts");
+const panelsEl = document.getElementById("panels");
+
+let zTop = 10;
+
+function el(tag, cls, html) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (html !== undefined) n.innerHTML = html;
+  return n;
+}
+
+function rowNode(row) {
+  const r = el("div", "row");
+  r.append(el("div", "row-label", row.l));
+  if (row.t === "tg") {
+    const tg = el("div", "tg no-drag" + (row.on ? " on" : ""), "<i></i>");
+    tg.addEventListener("pointerdown", (e) => e.stopPropagation());
+    tg.addEventListener("click", (e) => { e.stopPropagation(); tg.classList.toggle("on"); });
+    r.append(tg);
+  } else if (row.t === "sl") {
+    const sl = el("div", "sl no-drag");
+    sl.innerHTML = '<div class="trk"></div><div class="fil"></div><div class="kn"></div>';
+    const fil = sl.querySelector(".fil");
+    const kn = sl.querySelector(".kn");
+    const set = (v) => {
+      fil.style.width = (v * 100) + "%";
+      kn.style.left = (v * 100) + "%";
+    };
+    set(row.v);
+    let active = false;
+    const move = (e) => {
+      const b = sl.getBoundingClientRect();
+      set(Math.max(0, Math.min(1, (e.clientX - b.left) / b.width)));
+    };
+    sl.addEventListener("pointerdown", (e) => { e.stopPropagation(); sl.setPointerCapture(e.pointerId); active = true; move(e); });
+    sl.addEventListener("pointermove", (e) => { if (active) move(e); });
+    sl.addEventListener("pointerup", () => { active = false; });
+    r.append(sl);
+  } else {
+    r.append(el("div", "pill-val", row.v));
+  }
+  return r;
+}
+
+function buildPanel(data) {
+  const slot = SLOTS[data.slot];
+  const p = {
+    id: data.id,
+    slot: data.slot,
+    w: slot.w,
+    h: slot.h,
+    r: slot.r,
+    x: slot.x, y: slot.y,
+    tx: slot.x, ty: slot.y,
+    vx: 0, vy: 0,
+    sc: 1, tsc: 1, vsc: 0,
+    rot: 0, vrot: 0,
+    k: 190, c: 16.5,
+    dragging: false,
+  };
+
+  const node = el("div", "panel" + (data.kind === "main" ? " main" : "") + (data.hi ? " hi" : ""));
+  node.style.width = slot.w + "px";
+  node.style.height = slot.h + "px";
+  node.dataset.id = data.id;
+
+  const clip = el("div", "clip");
+  clip.style.borderRadius = slot.r + "px";
+
+  if (data.kind === "segbar") {
+    const bar = el("div", "segbar");
+    data.segs.forEach((s, i) => {
+      const seg = el("div", "seg no-drag" + (i === data.active ? " on" : ""), s);
+      seg.dataset.idx = i;
+      bar.append(seg);
+    });
+    clip.append(bar);
+  } else if (data.kind === "main") {
+    const body = el("div", "main-body");
+    body.innerHTML = '<div class="main-glyph">' + GLYPHS.aura + "</div>";
+    clip.append(body);
+    const t = el("div", "main-title");
+    t.innerHTML = '<div class="t">' + data.title + '</div><div class="s">' + data.sub + "</div>";
+    clip.append(t);
+    const chip = el("div", "main-chip", "<i></i>активно");
+    clip.append(chip);
+  } else if (data.kind === "search") {
+    const s = el("div", "search");
+    const add = el("div", "search-add no-drag", '<svg viewBox="0 0 24 24"><path d="M11 4h2v7h7v2h-7v7h-2v-7H4v-2h7z"/></svg>');
+    const field = el("div", "search-field");
+    const input = el("input");
+    input.placeholder = "Поиск модулей...";
+    input.id = "search-input";
+    field.append(input);
+    s.append(add, field);
+    clip.append(s);
+  } else if (data.kind === "presets") {
+    const body = el("div", "presets-body");
+    const head = el("div", "panel-head");
+    head.append(el("div", "panel-title", data.title));
+    body.append(head);
+    const dot = el("div", "preset-dot no-drag");
+    body.append(dot);
+    const sheets = el("div", "sheets");
+    data.sheets.forEach((name, i) => {
+      const sh = el("div", "sheet no-drag", name);
+      sh.style.zIndex = 10 - i;
+      sh.addEventListener("click", () => {
+        sheets.querySelectorAll(".sheet").forEach((x) => x.style.zIndex = 20);
+        sh.style.zIndex = 30;
+        pulse(sh);
+      });
+      sheets.append(sh);
+    });
+    body.append(sheets);
+    clip.append(body);
+  } else {
+    const head = el("div", "panel-head");
+    head.append(el("div", "panel-title", data.title));
+    clip.append(head);
+    const rows = el("div", "rows");
+    data.rows.forEach((r) => rows.append(rowNode(r)));
+    clip.append(rows);
+  }
+
+  if (data.kind === "module" || data.kind === "list" || data.kind === "presets") {
+    const grip = el("div", "grip", "<i></i><i></i><i></i>");
+    clip.append(grip);
+  }
+
+  const rz = el("div", "resize no-drag");
+  rz.addEventListener("pointerdown", (e) => onResizeDown(e, p, node));
+  node.append(clip, rz);
+
+  if (data.kind === "main") {
+    node.append(el("div", "knob no-drag"));
+  }
+
+  node.addEventListener("pointerdown", (e) => onDown(e, p, node));
+  node.addEventListener("dblclick", (e) => {
+    if (e.target.closest(".no-drag")) return;
+    sendHome(p);
+  });
+  panelsEl.append(node);
+  node.style.zIndex = String(++zTop);
+
+  panelById.set(p.id, p);
+  panelEls.set(p.id, node);
+  requestAnimationFrame(() => updateFade(p));
+  return p;
+}
+
+function pulse(node) {
+  node.animate(
+    [{ transform: "translateY(0) scale(1)" }, { transform: "translateY(-4px) scale(1.03)" }, { transform: "translateY(0) scale(1)" }],
+    { duration: 520, easing: "cubic-bezier(.2,1.6,.4,1)" }
+  );
+}
+
+PANEL_DATA.forEach(buildPanel);
+
+PANEL_DATA.forEach((d, i) => {
+  const p = panelById.get(d.id);
+  const cx = DESIGN_W / 2 - p.w / 2;
+  const cy = DESIGN_H / 2 - p.h / 2;
+  p.x = p.tx + (cx - p.tx) * 0.42;
+  p.y = p.ty + (cy - p.ty) * 0.42;
+  p.sc = 0.90;
+  p.vsc = 0.6;
+  p.k = 112; p.c = 12.5;
+  setTimeout(() => { p.tsc = 1; }, 80 + i * 55);
+  setTimeout(() => { p.k = 190; p.c = 16.5; }, 900);
+});
+
+const ghostBySlot = new Map();
+Object.keys(SLOTS).forEach((key) => {
+  const s = SLOTS[key];
+  const g = el("div", "ghost");
+  g.style.left = s.x + "px";
+  g.style.top = s.y + "px";
+  g.style.width = s.w + "px";
+  g.style.height = s.h + "px";
+  g.style.borderRadius = s.r + "px";
+  ghostsEl.append(g);
+  ghostBySlot.set(key, g);
+});
+
+function occupantOf(slotKey) {
+  for (const p of panelById.values()) if (p.slot === slotKey) return p;
+  return null;
+}
+
+function refreshGhosts() {
+  ghostBySlot.forEach((g, key) => {
+    const occ = occupantOf(key);
+    g.classList.toggle("show", !occ);
+  });
+}
+
+refreshGhosts();
+
+const stage = document.getElementById("stage");
+const viewport = document.getElementById("viewport");
+let stageScale = 1;
+let stageRect = stage.getBoundingClientRect();
+
+function fitStage() {
+  const pad = 96;
+  const k = Math.min(
+    (window.innerWidth - pad) / DESIGN_W,
+    (window.innerHeight - pad) / DESIGN_H
+  );
+  stageScale = Math.max(.35, Math.min(1.6, k));
+  stage.style.transform = "scale(" + stageScale + ")";
+  stageRect = stage.getBoundingClientRect();
+}
+window.addEventListener("resize", fitStage);
+fitStage();
+
+function toStage(clientX, clientY) {
+  return {
+    x: (clientX - stageRect.left) / stageScale,
+    y: (clientY - stageRect.top) / stageScale,
+  };
+}
+
+let drag = null;
+let resizing = null;
+
+function onResizeDown(e, p, node) {
+  if (e.button !== 0) return;
+  e.stopPropagation();
+  const pt = toStage(e.clientX, e.clientY);
+  p.slot = null;
+  p.k = 900; p.c = 62;
+  p.tsc = 1.02;
+  refreshGhosts();
+  resizing = { p: p, node: node, startX: pt.x, startY: pt.y, w0: p.w, h0: p.h, id: e.pointerId };
+  node.setPointerCapture(e.pointerId);
+  window.addEventListener("pointermove", onResizeMove);
+  window.addEventListener("pointerup", onResizeUp);
+}
+
+function onResizeMove(e) {
+  if (!resizing) return;
+  const pt = toStage(e.clientX, e.clientY);
+  const p = resizing.p;
+  p.w = Math.max(170, Math.min(DESIGN_W - p.x - 12, resizing.w0 + (pt.x - resizing.startX)));
+  p.h = Math.max(80, Math.min(DESIGN_H - p.y - 12, resizing.h0 + (pt.y - resizing.startY)));
+  applySize(p);
+}
+
+function onResizeUp() {
+  if (!resizing) return;
+  const p = resizing.p;
+  p.k = 190; p.c = 16.5;
+  p.tsc = 1;
+  p.vsc = -0.04;
+  resizing = null;
+  window.removeEventListener("pointermove", onResizeMove);
+  window.removeEventListener("pointerup", onResizeUp);
+}
+
+function onDown(e, p, node) {
+  if (e.button !== 0) return;
+  p.z = ++zTop;
+  node.style.zIndex = String(p.z);
+  if (e.target.closest(".no-drag")) return;
+  const pt = toStage(e.clientX, e.clientY);
+  p.dragging = true;
+  p.z = ++zTop;
+  node.style.zIndex = String(p.z);
+  node.classList.add("dragging");
+  p.tsc = 1.035;
+  p.k = 620; p.c = 52;
+  p.grabX = pt.x - p.x;
+  p.grabY = pt.y - p.y;
+  p.tx = p.x;
+  p.ty = p.y;
+  drag = { p: p, node: node, id: e.pointerId, startX: pt.x, startY: pt.y };
+  node.setPointerCapture(e.pointerId);
+  window.addEventListener("pointermove", onMove);
+  window.addEventListener("pointerup", onUp);
+  window.addEventListener("pointercancel", onUp);
+}
+
+function onMove(e) {
+  if (!drag) return;
+  const pt = toStage(e.clientX, e.clientY);
+  const p = drag.p;
+  p.tx = pt.x - p.grabX;
+  p.ty = pt.y - p.grabY;
+  const vx = pt.x - drag.startX, vy = pt.y - drag.startY;
+  p.vrot = Math.max(-0.035, Math.min(0.035, vx * 0.00035));
+  drag.startX = pt.x; drag.startY = pt.y;
+  highlightSlot(findSlotAt(pt.x, pt.y));
+}
+
+function findSlotAt(x, y) {
+  let best = null, bestD = Infinity;
+  Object.keys(SLOTS).forEach((key) => {
+    const s = SLOTS[key];
+    const cx = s.x + s.w / 2, cy = s.y + s.h / 2;
+    const inside = x > s.x - 30 && x < s.x + s.w + 30 && y > s.y - 30 && y < s.y + s.h + 30;
+    if (!inside) return;
+    const d = Math.hypot(x - cx, y - cy);
+    if (d < bestD) { bestD = d; best = key; }
+  });
+  return best;
+}
+
+function highlightSlot(key) {
+  ghostBySlot.forEach((g, k) => {
+    g.classList.toggle("hot", k === key);
+    g.classList.toggle("show", !occupantOf(k) || k === key);
+  });
+}
+
+function onUp() {
+  if (!drag) return;
+  const p = drag.p;
+  const node = drag.node;
+  p.dragging = false;
+  p.k = 190; p.c = 16.5;
+  p.tsc = 1;
+  p.vrot = 0;
+  node.classList.remove("dragging");
+  window.removeEventListener("pointermove", onMove);
+  window.removeEventListener("pointerup", onUp);
+  window.removeEventListener("pointercancel", onUp);
+
+  const target = findSlotAt(p.x + p.w / 2, p.y + p.h / 2) || findSlotAt(p.tx + p.w / 2, p.ty + p.h / 2);
+  if (target) {
+    const occ = occupantOf(target);
+    if (occ && occ !== p) {
+      const oldSlot = p.slot;
+      occ.slot = oldSlot;
+      const os = SLOTS[oldSlot];
+      occ.w = os.w; occ.h = os.h; occ.r = os.r;
+      occ.tx = os.x; occ.ty = os.y;
+      applySize(occ);
+      occ.vx += 40; occ.vy -= 30;
+    }
+    const s = SLOTS[target];
+    p.slot = target;
+    p.w = s.w; p.h = s.h; p.r = s.r;
+    p.tx = s.x; p.ty = s.y;
+    applySize(p);
+  } else {
+    p.slot = null;
+    p.tx = Math.max(20, Math.min(DESIGN_W - p.w - 20, p.tx));
+    p.ty = Math.max(20, Math.min(DESIGN_H - p.h - 20, p.ty));
+    p.vx += (p.x - p.tx) * 2.5;
+    p.vy += (p.y - p.ty) * 2.5;
+  }
+  p.vsc = -0.06;
+  drag = null;
+  ghostBySlot.forEach((g) => g.classList.remove("hot"));
+  refreshGhosts();
+}
+
+function dockTo(p, slotKey) {
+  const occ = occupantOf(slotKey);
+  if (occ && occ !== p) {
+    if (p.slot) {
+      const os = SLOTS[p.slot];
+      occ.slot = p.slot;
+      occ.w = os.w; occ.h = os.h; occ.r = os.r;
+      occ.tx = os.x; occ.ty = os.y;
+      applySize(occ);
+      occ.vx += 40; occ.vy -= 30;
+    }
+  }
+  const s = SLOTS[slotKey];
+  p.slot = slotKey;
+  p.w = s.w; p.h = s.h; p.r = s.r;
+  p.tx = s.x; p.ty = s.y;
+  p.k = 190; p.c = 16.5;
+  p.vx += 30; p.vy -= 20;
+  applySize(p);
+  refreshGhosts();
+}
+
+function sendHome(p) {
+  const def = PANEL_DATA.find((d) => d.id === p.id);
+  if (!def) return;
+  dockTo(p, def.slot);
+  pulse(panelEls.get(p.id));
+}
+
+function updateFade(p) {
+  const node = panelEls.get(p.id);
+  const clip = node.querySelector(".clip");
+  node.classList.toggle("fade", clip.scrollHeight > clip.clientHeight + 2);
+}
+
+function applySize(p) {
+  const node = panelEls.get(p.id);
+  node.style.width = p.w + "px";
+  node.style.height = p.h + "px";
+  node.querySelector(".clip").style.borderRadius = p.r + "px";
+  updateFade(p);
+}
+
+function bindAll() {
+  PANEL_DATA.forEach((d) => {
+    const p = panelById.get(d.id);
+    const s = SLOTS[d.slot];
+    p.slot = d.slot;
+    p.w = s.w; p.h = s.h; p.r = s.r;
+    p.tx = s.x; p.ty = s.y;
+    p.k = 190; p.c = 16.5;
+    p.vx += 60; p.vy -= 40;
+    applySize(p);
+  });
+  refreshGhosts();
+}
+
+document.getElementById("diamond").addEventListener("click", bindAll);
+document.querySelector(".brand").addEventListener("click", bindAll);
+
+function buildRail() {
+  const rail = document.getElementById("rail");
+  rail.innerHTML = "";
+  RAIL_ITEMS.forEach((item, i) => {
+    const it = el("div", "rail-item no-drag" + (i === 0 ? " on" : ""), "<span></span>");
+    it.title = item.title;
+    it.addEventListener("click", () => {
+      rail.querySelectorAll(".rail-item").forEach((x) => x.classList.remove("on"));
+      it.classList.add("on");
+      setMain(item);
+      pulse(it);
+    });
+    rail.append(it);
+  });
+  const bottom = el("div", "rail-bottom no-drag", '<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19.2 12c0-.4 0-.8-.1-1.2l2-1.5-2-3.4-2.3.9c-.6-.5-1.3-1-2-1.3L14.4 3H9.6l-.4 2.5c-.7.3-1.4.8-2 1.3l-2.3-.9-2 3.4 2 1.5c-.1.4-.1.8-.1 1.2s0 .8.1 1.2l-2 1.5 2 3.4 2.3-.9c.6.5 1.3 1 2 1.3l.4 2.5h4.8l.4-2.5c.7-.3 1.4-.8 2-1.3l2.3.9 2-3.4-2-1.5c.1-.4.1-.8.1-1.2z"/></svg>');
+  bottom.title = "настройки";
+  rail.append(bottom);
+}
+
+let currentItem = RAIL_ITEMS[0];
+
+function setMain(item) {
+  currentItem = item;
+  const node = panelEls.get("main");
+  const t = node.querySelector(".main-title .t");
+  const s = node.querySelector(".main-title .s");
+  const g = node.querySelector(".main-glyph");
+  t.textContent = item.title;
+  s.textContent = item.sub;
+  g.innerHTML = GLYPHS[item.key] || GLYPHS.aura;
+  pulse(t);
+  pulse(g);
+}
+
+buildRail();
+
+document.querySelectorAll(".seg").forEach((seg) => {
+  seg.addEventListener("click", () => {
+    const bar = seg.parentElement;
+    bar.querySelectorAll(".seg").forEach((x) => x.classList.remove("on"));
+    seg.classList.add("on");
+    pulse(seg);
+  });
+});
+
+const searchInput = document.getElementById("search-input");
+searchInput.addEventListener("input", () => {
+  const q = searchInput.value.trim().toLowerCase();
+  const rowsNode = panelEls.get("rows").querySelectorAll(".row");
+  rowsNode.forEach((r) => {
+    const label = r.querySelector(".row-label").textContent.toLowerCase();
+    r.style.opacity = q === "" || label.includes(q) ? "1" : ".3";
+  });
+});
+
+let last = 0;
+function tick(ts) {
+  const now = ts / 1000;
+  const dt = Math.min(0.05, last ? now - last : 1 / 60);
+  last = now;
+
+  panelById.forEach((p) => {
+    const ax = (p.tx - p.x) * p.k - p.vx * p.c;
+    const ay = (p.ty - p.y) * p.k - p.vy * p.c;
+    p.vx += ax * dt;
+    p.vy += ay * dt;
+    p.x += p.vx * dt;
+    p.y += p.vy * dt;
+
+    const as = (p.tsc - p.sc) * 320 - p.vsc * 26;
+    p.vsc += as * dt;
+    p.sc += p.vsc * dt;
+
+    p.vrot += ((p.dragging ? p.vrot : 0) - p.rot) * 0;
+    const targetRot = p.dragging ? p.vrot * 0.6 : 0;
+    p.rot += (targetRot - p.rot) * Math.min(1, dt * 12);
+
+    const node = panelEls.get(p.id);
+    node.style.transform =
+      "translate3d(" + p.x.toFixed(2) + "px," + p.y.toFixed(2) + "px,0) rotate(" + (p.rot * 57.2958).toFixed(2) + "deg) scale(" + p.sc.toFixed(4) + ")";
+  });
+
+  requestAnimationFrame(tick);
+}
+requestAnimationFrame(tick);
+
+const hud = document.getElementById("hud");
+let hudTimer = null;
+function wakeHud() {
+  hud.classList.add("awake");
+  clearTimeout(hudTimer);
+  hudTimer = setTimeout(() => hud.classList.remove("awake"), 2600);
+}
+wakeHud();
+["pointermove", "pointerdown", "keydown"].forEach((ev) => window.addEventListener(ev, wakeHud, { passive: true }));
+window.addEventListener("pointermove", (e) => {
+  if (hud.matches(":hover")) hud.classList.add("awake");
+});
+const hAccent = document.getElementById("h-accent");
+const hAccentV = document.getElementById("h-accent-v");
+hAccent.addEventListener("input", () => {
+  const v = +hAccent.value;
+  const root = document.documentElement;
+  if (v === 0) {
+    root.style.setProperty("--acc", "#d7d7dd");
+    hAccentV.textContent = "серый";
+  } else {
+    const sat = 42, light = 74;
+    root.style.setProperty("--acc", "hsl(" + v + " " + sat + "% " + light + "%)");
+    hAccentV.textContent = v + "°";
+  }
+});
+document.getElementById("h-bind").addEventListener("click", bindAll);
+document.getElementById("h-reset").addEventListener("click", bindAll);
+window.addEventListener("keydown", (e) => {
+  if (e.key === "h" || e.key === "H") hud.classList.toggle("hidden");
+});
+</script>
+</body>
+</html>

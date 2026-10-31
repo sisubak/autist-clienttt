@@ -59,3 +59,7 @@ CSS-переменные в `:root` — зеркало `MenuTheme`. Быстры
   список осознанных расхождений — `preview/PREVIEW_1TO1.md`.
 - `preview/menu_exact.template.html` + `preview/build_menu_exact.py` — исходник превью
   и сборщик, который вшивает шрифты.
+
+- `preview/menu_redesign.html` — прототип нового вида по мокапу: панели-окна,
+  перетаскивание со снапом по слотам, обмен местами, стек по z, ресайз, пружины.
+  Описание сетки и физики — `preview/REDESIGN_PROTO.md`.
